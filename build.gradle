@@ -1,7 +1,7 @@
 plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.9'
-    id 'com.gluonhq.client-gradle-plugin' version '0.1.36'
+    id 'com.gluonhq.client-gradle-plugin' version '0.1.38'
     id 'java'
 }
 
@@ -33,4 +33,20 @@ jar {
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
+}
+
+gluonClient {
+    reflectionList = ['javafx.fxml.FXMLLoader',
+                      'javafx.collections.FXCollections',
+                      'javafx.scene.control.ComboBox',
+                      'javafx.scene.control.Slider',
+                      'com.funbiscuit.jfx.curvedetect.CanvasPane',
+                      'com.funbiscuit.jfx.curvedetect.MainController',
+                      'com.funbiscuit.jfx.curvedetect.TickPopupController',
+    ]
+    bundlesList = [
+            // will include only bundle for default locale at build time
+            // so need to use a workaround later
+            'com.funbiscuit.jfx.curvedetect.strings'
+    ]
 }

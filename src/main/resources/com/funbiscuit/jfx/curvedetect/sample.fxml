@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.funbiscuit.jfx.curvedetect.CanvasPane?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<HBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="720" minWidth="1280"
+      prefHeight="600.0" prefWidth="600.0"
+      xmlns="http://javafx.com/javafx/8.0.172-ea"
+      xmlns:fx="http://javafx.com/fxml/1"
+      stylesheets="@modena_dark.css"
+      fx:controller="com.funbiscuit.jfx.curvedetect.MainController">
+    <AnchorPane maxWidth="280.0" minHeight="0.0" minWidth="280.0"
+                prefWidth="280.0">
+        <VBox fx:id="settingsVBox" maxWidth="280.0" prefWidth="280.0"
+              AnchorPane.bottomAnchor="0.0"
+              AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <HBox>
+                <Label fx:id="subdivisionLabel" style="-fx-padding: 0 0 -5 0;"
+                       text="%subdivision"/>
+                <Label fx:id="subdivisionValueLabel"
+                       style="-fx-padding: 0 0 -5 5;" text="3"/>
+            </HBox>
+            <Slider fx:id="subdivisionSlider" blockIncrement="1.0"
+                    majorTickUnit="1.0" max="8.0"
+                    minWidth="200" snapToTicks="true" value="3.0"/>
+            <HBox>
+                <Label fx:id="binarizationLabel"
+                       style="-fx-padding: 0 0 -5 0;"
+                       text="%binarization"/>
+                <Label fx:id="binarizationValueLabel"
+                       style="-fx-padding: 0 0 -5 5;" text="127"/>
+            </HBox>
+            <Slider fx:id="binarizationSlider" blockIncrement="1.0"
+                    majorTickUnit="1.0" max="255.0"
+                    minWidth="200" value="127.0"/>
+            <CheckBox fx:id="drawSubMarkers" mnemonicParsing="false"
+                      selected="true"
+                      text="%drawMarkers"/>
+            <CheckBox fx:id="showImageToggle" mnemonicParsing="false"
+                      selected="true"
+                      text="%showImage"/>
+            <CheckBox fx:id="showBinarizationToggle" mnemonicParsing="false"
+                      text="%showBinarization"/>
+            <HBox>
+                <Button fx:id="openImageButton" minWidth="130"
+                        text="%openImage"/>
+                <Button fx:id="resetAllButton" disable="true" minWidth="120"
+                        text="%resetAll">
+                    <HBox.margin>
+                        <Insets left="10.0"/>
+                    </HBox.margin>
+                </Button>
+            </HBox>
+            <Separator/>
+            <HBox>
+                <Button fx:id="copyToClipboardButton" disable="true"
+                        minWidth="130"
+                        text="%exportClipboard"/>
+                <Button fx:id="exportButton" disable="true" minWidth="120"
+                        text="%exportFile">
+                    <HBox.margin>
+                        <Insets left="10.0"/>
+                    </HBox.margin>
+                </Button>
+            </HBox>
+            <!--<Label text="Export Settings" />-->
+            <HBox>
+                <Label fx:id="columnSeparatorLabel" minWidth="165"
+                       style="-fx-padding: 0 0 -5 0;"
+                       text="%columnSeparator"/>
+                <TextField fx:id="columnSeparatorValueField" disable="true"
+                           maxWidth="120"
+                           text="%columnSeparatorValue">
+                    <HBox.margin>
+                        <Insets left="10.0"/>
+                    </HBox.margin>
+                </TextField>
+            </HBox>
+            <HBox>
+                <Label fx:id="lineEndingLabel" minWidth="165"
+                       style="-fx-padding: 0 0 -5 0;"
+                       text="%lineEnding"/>
+                <TextField fx:id="lineEndingValueField" disable="true"
+                           maxWidth="120"
+                           text="%lineEndingValue">
+                    <HBox.margin>
+                        <Insets left="10.0"/>
+                    </HBox.margin>
+                </TextField>
+            </HBox>
+            <HBox>
+                <Label fx:id="decimalSeparatorLabel" minWidth="165"
+                       style="-fx-padding: 0 0 -5 0;"
+                       text="%decimalSeparatorLabel"/>
+                <ComboBox fx:id="decimalSeparatorComboBox" maxWidth="120"
+                          prefWidth="120.0">
+                    <HBox.margin>
+                        <Insets left="10.0"/>
+                    </HBox.margin>
+                </ComboBox>
+            </HBox>
+            <Separator/>
+            <Label fx:id="tipsLabel" wrapText="true"/>
+            <VBox VBox.vgrow="ALWAYS">
+            </VBox>
+            <VBox fx:id="exportReadyVBox">
+                <!--<Label fx:id="imageReadyLabel" style="-fx-padding: 0 0 -5 0;" text="Image" />-->
+                <Label fx:id="pointsReadyLabel" style="-fx-padding: 0 0 -5 0;"
+                       wrapText="true"/>
+                <Label fx:id="xTicksReadyLabel" style="-fx-padding: 0 0 -5 0;"
+                       wrapText="true"/>
+                <Label fx:id="yTicksReadyLabel" style="-fx-padding: 0 0 -5 0;"
+                       wrapText="true"/>
+            </VBox>
+        </VBox>
+    </AnchorPane>
+    <BorderPane minHeight="0.0" minWidth="0.0" HBox.hgrow="ALWAYS">
+        <center>
+            <CanvasPane fx:id="mainCanvas" BorderPane.alignment="CENTER"/>
+        </center>
+    </BorderPane>
+</HBox>

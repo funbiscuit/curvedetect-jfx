@@ -1,0 +1,25 @@
+.root {
+    LABEL_PADDING_TOP: 0;
+    LABEL_PADDING_RIGHT: 0;
+    LABEL_PADDING_BOTTOM: 0;
+    LABEL_PADDING_LEFT: 5px;
+}
+
+.split-pane-divider {
+    -fx-background-color: transparent;
+}
+.split-pane{
+}
+.label{
+    -fx-font-size: 14px;
+}
+.check-box{
+    -fx-font-size: 14px;
+}
+VBox#settingsVBox {
+    -fx-spacing: 10;
+    -fx-padding: 10 10 10 10;
+}
+VBox#exportReadyVBox {
+    -fx-spacing: 10;
+}

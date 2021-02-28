@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<AnchorPane prefHeight="140.0" prefWidth="220.0" stylesheets="@modena_dark.css"
+            xmlns="http://javafx.com/javafx/10.0.2-internal"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.funbiscuit.jfx.curvedetect.TickPopupController">
+    <VBox alignment="CENTER">
+        <Label fx:id="tickTipLabel" alignment="CENTER" prefWidth="220.0"
+               text="%tickDialogLabel" textAlignment="CENTER">
+            <VBox.margin>
+                <Insets top="10.0"/>
+            </VBox.margin>
+        </Label>
+        <TextField fx:id="tickValueText" maxWidth="220"
+                   text="0.0">
+            <VBox.margin>
+                <Insets left="10.0" right="10.0" top="5.0"/>
+            </VBox.margin>
+        </TextField>
+        <HBox alignment="CENTER">
+            <Button fx:id="tickApprove" mnemonicParsing="false" prefWidth="100"
+                    text="%tickDialogOk">
+                <HBox.margin>
+                    <Insets left="10.0" right="5.0" top="10.0"/>
+                </HBox.margin>
+            </Button>
+            <Button fx:id="tickCancel" mnemonicParsing="false" prefWidth="100"
+                    text="%tickDialogCancel">
+                <HBox.margin>
+                    <Insets left="5.0" right="10.0" top="10.0"/>
+                </HBox.margin>
+            </Button>
+        </HBox>
+        <Button fx:id="tickDelete" mnemonicParsing="false" prefWidth="210"
+                text="%tickDialogDelete">
+            <VBox.margin>
+                <Insets left="10.0" right="10.0" top="10.0"/>
+            </VBox.margin>
+        </Button>
+    </VBox>
+</AnchorPane>
