@@ -1,5 +1,6 @@
 package com.funbiscuit.jfx.curvedetect;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
@@ -24,7 +25,7 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 public class MainController {
-    private final ImageData image;
+    private ImageWrapper image;
     private final Vec2D defaultImageOffset = new Vec2D(0, 0);
     private final Vec2D currentImageOffset = new Vec2D(0, 0);
     private final MenuItem openImageItem;
@@ -107,7 +108,6 @@ public class MainController {
     
     public MainController() {
         currentWorkMode = MainController.WorkMode.NONE;
-        image = new ImageData();
         openImageItem = new MenuItem("open");
         pointsItem = new MenuItem("points");
         horizonItem = new MenuItem("horizon");
@@ -129,8 +129,6 @@ public class MainController {
         this.stage = stage;
 
         redrawCanvas(false);
-
-        imageCurve.setImage(image);
 
         //TODO use Stage(StageStyle.TRANSPARENT)
         tickDialog = new Stage();
@@ -185,14 +183,12 @@ public class MainController {
             }
         });
 
-        image.setThreshold((int) binarizationSlider.getValue());
-
         binarizationSlider.valueProperty().addListener((o, old, newValue) -> {
-            if (image.getThreshold() != newValue.intValue()) {
+            if (image != null && image.getThreshold() != newValue.intValue()) {
                 image.setThreshold(newValue.intValue());
-                image.updateBinarization(this::redrawCanvas);
-                binarizationValueLabel.setText(Integer.toString(image.getThreshold()));
+                image.updateBinarization(() -> Platform.runLater(this::redrawCanvas));
             }
+            binarizationValueLabel.setText(Integer.toString(newValue.intValue()));
         });
 
         drawSubMarkers.selectedProperty().addListener((o, old, newValue) -> {
@@ -558,7 +554,7 @@ public class MainController {
     }
 
     private void checkImageOffset() {
-        if (image.getImage() == null) {
+        if (image == null) {
             return;
         }
         Image img = image.getImage();
@@ -710,10 +706,10 @@ public class MainController {
     }
 
     private void showContextMenu(double x, double y) {
-        openImageItem.setVisible(image.getImage() == null);
-        pointsItem.setDisable(image.getImage() == null || currentWorkMode == MainController.WorkMode.POINTS);
-        itemGrid.setDisable(image.getImage() == null || currentWorkMode == MainController.WorkMode.X_TICKS || currentWorkMode == MainController.WorkMode.Y_TICKS);
-        horizonItem.setDisable(image.getImage() == null || currentWorkMode == MainController.WorkMode.HORIZON);
+        openImageItem.setVisible(image == null);
+        pointsItem.setDisable(image == null || currentWorkMode == MainController.WorkMode.POINTS);
+        itemGrid.setDisable(image == null || currentWorkMode == MainController.WorkMode.X_TICKS || currentWorkMode == MainController.WorkMode.Y_TICKS);
+        horizonItem.setDisable(image == null || currentWorkMode == MainController.WorkMode.HORIZON);
 
 
         contextMenu.show(mainCanvas, x, y);
@@ -764,7 +760,9 @@ public class MainController {
         if (file == null) {
             return;
         }
-        image.loadImage(file);
+        image = new ImageWrapper(file.toPath());
+        image.setThreshold((int) binarizationSlider.getValue());
+        imageCurve.setImage(image);
         imageCurve.resetPoints();
         updateImageTransform();
         currentWorkMode = MainController.WorkMode.POINTS;
@@ -795,7 +793,7 @@ public class MainController {
     private void updateImageTransform() {
         //called when image scale and offset have changed
 
-        if (image.getImage() == null) {
+        if (image == null) {
             return;
         }
 
@@ -821,10 +819,10 @@ public class MainController {
     }
 
     private void drawImage() {
-        Image img = showBinarization ? image.getImageBW() : image.getImage();
-        if (img == null || !showImage) {
+        if(image == null || !showImage)
             return;
-        }
+        Image img = showBinarization ? image.getBwImage() : image.getImage();
+
         gc.drawImage(img, currentImageOffset.getX(), currentImageOffset.getY(),
                 currentImageScale * img.getWidth(), currentImageScale * img.getHeight());
     }

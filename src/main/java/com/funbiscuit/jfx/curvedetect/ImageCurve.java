@@ -20,14 +20,13 @@ public class ImageCurve {
     private TickPoint selectedYtick;
     private HorizonSettings.HorizonPoint hoveredOrigin;
     private HorizonSettings.HorizonPoint selectedOrigin;
-    private ImageData image;
+    private ImageWrapper image;
     private int subdivideIterations;
 
 
     public ImageCurve() {
         hoveredOrigin = HorizonSettings.HorizonPoint.NONE;
         selectedOrigin = HorizonSettings.HorizonPoint.NONE;
-        image = new ImageData();
         subdivideIterations = 3;
         allPoints = new ArrayList<>();
         userPoints = new ArrayList<>();
@@ -121,7 +120,7 @@ public class ImageCurve {
 
     public void snapSelected() {
         ImageElement selected = this.getSelectedElement();
-        if (selected != null) {
+        if (selected != null && image != null) {
             selected.setSnapped(image.snapToCurve(selected) && image.snapToBary(selected));
         }
     }
@@ -139,6 +138,9 @@ public class ImageCurve {
     }
 
     private void updateSubdivision() {
+        if(image == null)
+            return;
+
         int pointsNum = userPoints.size();
 
         //TODO we are able to reuse old data, so don't clear it
@@ -384,7 +386,7 @@ public class ImageCurve {
         }
     }
 
-    public void setImage(ImageData image) {
+    public void setImage(ImageWrapper image) {
         this.image = image;
     }
 
@@ -394,9 +396,9 @@ public class ImageCurve {
 
     public void resetHorizon() {
         horizonSettings.setValid(false);
-        Image img = image.getImage();
-        if (img == null)
+        if (image == null)
             return;
+        Image img = image.getImage();
 
         horizonSettings.setImagePos(img.getWidth() * 0.1, img.getHeight() * 0.5);
         horizonSettings.getTarget().setImagePos(img.getWidth() * 0.9, img.getHeight() * 0.5);
@@ -486,7 +488,7 @@ public class ImageCurve {
 
     public int getExportStatus() {
         int status = ExportStatus.READY;
-        if (this.image.getImage() == null) {
+        if (image == null) {
             status |= ExportStatus.NO_IMAGE;
             return status;
         }
