@@ -3,6 +3,7 @@ package com.funbiscuit.jfx.curvedetect.model;
 import javafx.scene.image.Image;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 
 public class ImageCurve {
@@ -35,7 +36,14 @@ public class ImageCurve {
         horizonSettings = new HorizonSettings(0.0D, 0.0D);
     }
 
-    public ImageElement getSelectedElement() {
+    public UUID getSelectedId() {
+        ImageElement selected = getSelectedElement();
+        if (selected != null)
+            return selected.getId();
+        return null;
+    }
+
+    private ImageElement getSelectedElement() {
         if (selectedPoint != null)
             return selectedPoint;
         if (selectedXtick != null)
@@ -49,19 +57,18 @@ public class ImageCurve {
         return null;
     }
 
-
-    public ImageElement getHoveredElement(int type) {
+    public UUID getHoveredId(int type) {
         if ((type & ImageElement.Type.POINT) != 0 && hoveredPoint != null)
-            return hoveredPoint;
+            return hoveredPoint.getId();
         if ((type & ImageElement.Type.X_TICK) != 0 && hoveredXtick != null)
-            return hoveredXtick;
+            return hoveredXtick.getId();
         if ((type & ImageElement.Type.Y_TICK) != 0 && hoveredYtick != null)
-            return hoveredYtick;
+            return hoveredYtick.getId();
         if ((type & ImageElement.Type.HORIZON) != 0 && hoveredOrigin != null) {
             if (hoveredOrigin == HorizonSettings.HorizonPoint.ORIGIN)
-                return horizonSettings;
+                return horizonSettings.getId();
             else if (hoveredOrigin == HorizonSettings.HorizonPoint.TARGET)
-                return horizonSettings.getTarget();
+                return horizonSettings.getTarget().getId();
         }
 
         return null;

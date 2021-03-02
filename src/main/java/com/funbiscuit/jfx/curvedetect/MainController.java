@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.UUID;
 
 public class MainController {
     private final Vec2D defaultImageOffset = new Vec2D(0, 0);
@@ -608,7 +609,7 @@ public class MainController {
     private void onShiftInput(boolean released) {
         if (released) {
             deleteOnClick = false;
-        } else if (imageCurve.getSelectedElement() == null) {
+        } else if (imageCurve.getSelectedId() == null) {
             deleteOnClick = true;
         }
 
@@ -870,13 +871,20 @@ public class MainController {
 
             gc.setFill(Color.LAWNGREEN);
             pointSize = 10.0;
-            ImageElement selectedPoint = imageCurve.getSelectedElement();
-            ImageElement hoveredPoint = imageCurve.getHoveredElement(ImageElement.Type.POINT);
+            UUID selectedId = imageCurve.getSelectedId();
+            UUID hoveredId = imageCurve.getHoveredId(ImageElement.Type.POINT);
 
+            Vec2D highlightPosition = null;
 
             for (ImageElement point : userPoints) {
-                if (selectedPoint != null && point.getId().equals(selectedPoint.getId()))
+                if (point.getId().equals(selectedId)) {
+                    highlightPosition = point.getImagePos();
                     continue;
+                } else if (highlightPosition == null && point.getId().equals(hoveredId) &&
+                        currentWorkMode == MainController.WorkMode.POINTS) {
+                    highlightPosition = point.getImagePos();
+                    continue;
+                }
 
                 Vec2D pointPos = imageToCanvas(point.getImagePos());
 
@@ -887,20 +895,17 @@ public class MainController {
                         pointPos.getY() - pointSize * 0.5, pointSize, pointSize);
             }
 
-            ImageElement point = selectedPoint;
-
-            gc.setFill(Color.AQUAMARINE);
-            if (selectedPoint == null && currentWorkMode == MainController.WorkMode.POINTS) {
-                point = hoveredPoint;
-
-                gc.setFill(Color.WHITE);
-                if (deleteOnClick) {
-                    gc.setFill(Color.RED);
+            if (highlightPosition != null) {
+                if (selectedId != null) {
+                    gc.setFill(Color.AQUAMARINE);
+                } else {
+                    gc.setFill(Color.WHITE);
+                    if (deleteOnClick) {
+                        gc.setFill(Color.RED);
+                    }
                 }
-            }
 
-            if (point != null) {
-                Vec2D pointPos = imageToCanvas(point.getImagePos());
+                Vec2D pointPos = imageToCanvas(highlightPosition);
 
                 gc.setLineWidth(1);
                 gc.setStroke(Color.gray(0));
@@ -995,17 +1000,17 @@ public class MainController {
         gc.setLineWidth(2.0);
         HorizonSettings horizon = imageCurve.getHorizon();
         ArrayList<TickPoint> xTickPoints = imageCurve.getXticks();
-        TickPoint selected = imageCurve.getSelectedTick();
-        ImageElement hovered = imageCurve.getHoveredElement(6);
+        UUID selectedId = imageCurve.getSelectedId();
+        UUID hoveredId = imageCurve.getHoveredId(ImageElement.Type.X_TICK | ImageElement.Type.Y_TICK);
 
         for (TickPoint xTick : xTickPoints) {
             gc.setStroke(Color.gray(0.0));
 
             if (currentWorkMode == MainController.WorkMode.X_TICKS ||
                     currentWorkMode == MainController.WorkMode.Y_TICKS) {
-                if (selected != null && xTick.getId().equals(selected.getId())) {
+                if (xTick.getId().equals(selectedId)) {
                     gc.setStroke(Color.GREEN);
-                } else if (hovered != null && xTick.getId().equals(hovered.getId())) {
+                } else if (xTick.getId().equals(hoveredId)) {
                     if (deleteOnClick) {
                         gc.setStroke(Color.RED);
                     } else {
@@ -1030,9 +1035,9 @@ public class MainController {
             gc.setStroke(Color.gray(0.0));
 
             if (currentWorkMode == MainController.WorkMode.X_TICKS || currentWorkMode == MainController.WorkMode.Y_TICKS) {
-                if (selected != null && yTick.getId().equals(selected.getId())) {
+                if (yTick.getId().equals(selectedId)) {
                     gc.setStroke(Color.GREEN);
-                } else if (hovered != null && yTick.getId().equals(hovered.getId())) {
+                } else if (yTick.getId().equals(hoveredId)) {
                     if (deleteOnClick) {
                         gc.setStroke(Color.RED);
                     } else {
@@ -1083,17 +1088,17 @@ public class MainController {
         Vec2D target = imageToCanvas(horizon.getTarget().getImagePos());
 
         gc.strokeLine(origin.getX(), origin.getY(), target.getX(), target.getY());
-        ImageElement selected = imageCurve.getSelectedElement();
-        ImageElement hovered = imageCurve.getHoveredElement(ImageElement.Type.HORIZON);
+        UUID selectedId = imageCurve.getSelectedId();
+        UUID hoveredId = imageCurve.getHoveredId(ImageElement.Type.HORIZON);
 
         gc.setLineWidth(1.0D);
         gc.setStroke(Color.gray(0.0D));
         gc.setFill(Color.gray(0.7D));
 
         //draw origin point
-        if (selected != null && horizon.getId().equals(selected.getId())) {
+        if (horizon.getId().equals(selectedId)) {
             gc.setFill(Color.AQUAMARINE);
-        } else if (hovered != null && horizon.getId().equals(hovered.getId())) {
+        } else if (horizon.getId().equals(hoveredId)) {
             gc.setFill(Color.WHITE);
             //deleting origin will reset horizon
             if (deleteOnClick) {
@@ -1105,9 +1110,9 @@ public class MainController {
         gc.strokeOval(origin.getX() - 5, origin.getY() - 5, 10, 10);
         gc.setFill(Color.gray(0.7));
 
-        if (selected != null && horizon.getTarget().getId().equals(selected.getId())) {
+        if (horizon.getTarget().getId().equals(selectedId)) {
             gc.setFill(Color.AQUAMARINE);
-        } else if (hovered != null && horizon.getTarget().getId().equals(hovered.getId())) {
+        } else if (horizon.getTarget().getId().equals(hoveredId)) {
             gc.setFill(Color.WHITE);
             if (this.deleteOnClick) {
                 gc.setFill(Color.RED);
