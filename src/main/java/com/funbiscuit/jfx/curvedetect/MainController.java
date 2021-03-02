@@ -1,5 +1,7 @@
 package com.funbiscuit.jfx.curvedetect;
 
+import com.funbiscuit.jfx.curvedetect.model.ImageWrapper;
+import com.funbiscuit.jfx.curvedetect.model.Vec2D;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -25,7 +27,6 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 public class MainController {
-    private ImageWrapper image;
     private final Vec2D defaultImageOffset = new Vec2D(0, 0);
     private final Vec2D currentImageOffset = new Vec2D(0, 0);
     private final MenuItem openImageItem;
@@ -37,6 +38,7 @@ public class MainController {
     private final ImageCurve imageCurve;
     public Parent tickPopup;
     public TickPopupController tickPopupController;
+    private ImageWrapper image;
     private MainController.WorkMode currentWorkMode;
     private GraphicsContext gc;
     //with this parameters image will be fit to canvas and centered
@@ -105,7 +107,7 @@ public class MainController {
     private CanvasPane mainCanvas;
     @FXML
     private ResourceBundle resources;
-    
+
     public MainController() {
         currentWorkMode = MainController.WorkMode.NONE;
         openImageItem = new MenuItem("open");
@@ -694,7 +696,8 @@ public class MainController {
 
             consumed = true;
         } else if (button == MouseButton.SECONDARY) {
-            Point2D screenPoint = mainCanvas.localToScreen(mousePosition.toPoint2D());
+            Point2D screenPoint = mainCanvas.localToScreen(
+                    mousePosition.getX(), mousePosition.getY());
             if (screenPoint != null) {
                 showContextMenu(screenPoint.getX(), screenPoint.getY());
                 consumed = true;
@@ -819,7 +822,7 @@ public class MainController {
     }
 
     private void drawImage() {
-        if(image == null || !showImage)
+        if (image == null || !showImage)
             return;
         Image img = showBinarization ? image.getBwImage() : image.getImage();
 

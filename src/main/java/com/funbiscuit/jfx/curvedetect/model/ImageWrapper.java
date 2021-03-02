@@ -1,5 +1,6 @@
-package com.funbiscuit.jfx.curvedetect;
+package com.funbiscuit.jfx.curvedetect.model;
 
+import com.funbiscuit.jfx.curvedetect.ImageElement;
 import javafx.scene.image.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -56,7 +57,7 @@ public class ImageWrapper {
     @Setter
     private int threshold = 127;
 
-    ImageWrapper(Path path) {
+    public ImageWrapper(Path path) {
         System.out.println(path);
         try (InputStream stream = Files.newInputStream(path)) {
             init(new Image(stream));
@@ -151,11 +152,21 @@ public class ImageWrapper {
     }
 
     /**
+     * Performs snapping of provided point to nearest black pixel
+     * and then performs snapping to barycenter of nearby region
+     * @param point to snap
+     * @return true if point was snapped or false if no black pixel was found nearby
+     */
+    public boolean snap(ImageElement point) {
+        return snapToCurve(point) && snapToBary(point);
+    }
+
+    /**
      * Snaps given point to nearest black pixel (changes its coordinates)
      * @param point to snap
      * @return true if point was snapped or false if no black pixel was found nearby
      */
-    public boolean snapToCurve(ImageElement point) {
+    private boolean snapToCurve(ImageElement point) {
         // rectangular region that defines region of snapping
         int halfSide = 10;
         int side = halfSide * 2 + 1;
@@ -208,7 +219,7 @@ public class ImageWrapper {
      * @param point to snap
      * @return true if snap was successful, or false if there are no black pixels nearby
      */
-    public boolean snapToBary(ImageElement point) {
+    private boolean snapToBary(ImageElement point) {
         // smaller region is used for barycenter calculation
         int halfSide = 4;
         int side = halfSide * 2 + 1;

@@ -1,5 +1,7 @@
 package com.funbiscuit.jfx.curvedetect;
 
+import com.funbiscuit.jfx.curvedetect.model.ImageWrapper;
+import com.funbiscuit.jfx.curvedetect.model.Vec2D;
 import javafx.scene.image.Image;
 
 import java.util.ArrayList;
@@ -121,7 +123,7 @@ public class ImageCurve {
     public void snapSelected() {
         ImageElement selected = this.getSelectedElement();
         if (selected != null && image != null) {
-            selected.setSnapped(image.snapToCurve(selected) && image.snapToBary(selected));
+            selected.setSnapped(image.snap(selected));
         }
     }
 
@@ -138,7 +140,7 @@ public class ImageCurve {
     }
 
     private void updateSubdivision() {
-        if(image == null)
+        if (image == null)
             return;
 
         int pointsNum = userPoints.size();
@@ -190,12 +192,12 @@ public class ImageCurve {
                     continue;
 
                 nextLeft.setImagePos(leftPointPos.getX() + (rightPointPos.getX() - leftPointPos.getX()) * (1.0D / (double) (rightIndex - leftIndex)), leftPointPos.getY() + (rightPointPos.getY() - leftPointPos.getY()) * (1.0D / (double) (rightIndex - leftIndex)));
-                nextLeft.setSnapped(image.snapToCurve(nextLeft) && image.snapToBary(nextLeft));
+                nextLeft.setSnapped(image.snap(nextLeft));
                 nextLeft.setSubdivisionPoint(true);
 
                 if (j != extraPointsHalf) {
                     nextRight.setImagePos(rightPointPos.getX() - (rightPointPos.getX() - leftPointPos.getX()) * (1.0D / (double) (rightIndex - leftIndex)), rightPointPos.getY() - (rightPointPos.getY() - leftPointPos.getY()) * (1.0D / (double) (rightIndex - leftIndex)));
-                    nextRight.setSnapped(image.snapToCurve(nextRight) && image.snapToBary(nextRight));
+                    nextRight.setSnapped(image.snap(nextRight));
                     nextRight.setSubdivisionPoint(true);
                 }
 

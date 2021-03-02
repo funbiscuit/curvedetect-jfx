@@ -1,5 +1,7 @@
 package com.funbiscuit.jfx.curvedetect;
 
+import com.funbiscuit.jfx.curvedetect.model.Vec2D;
+
 import java.util.UUID;
 
 public final class HorizonSettings implements ImageElement {
