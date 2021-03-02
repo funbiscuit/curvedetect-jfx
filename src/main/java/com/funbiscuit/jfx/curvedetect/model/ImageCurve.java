@@ -1,7 +1,5 @@
-package com.funbiscuit.jfx.curvedetect;
+package com.funbiscuit.jfx.curvedetect.model;
 
-import com.funbiscuit.jfx.curvedetect.model.ImageWrapper;
-import com.funbiscuit.jfx.curvedetect.model.Vec2D;
 import javafx.scene.image.Image;
 
 import java.util.ArrayList;

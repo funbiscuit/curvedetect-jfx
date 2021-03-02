@@ -1,4 +1,4 @@
-package com.funbiscuit.jfx.curvedetect;
+package com.funbiscuit.jfx.curvedetect.model;
 
 import java.io.IOException;
 import java.io.OutputStream;

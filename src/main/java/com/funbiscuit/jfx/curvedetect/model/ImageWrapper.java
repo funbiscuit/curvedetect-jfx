@@ -1,6 +1,5 @@
 package com.funbiscuit.jfx.curvedetect.model;
 
-import com.funbiscuit.jfx.curvedetect.ImageElement;
 import javafx.scene.image.*;
 import lombok.Getter;
 import lombok.Setter;

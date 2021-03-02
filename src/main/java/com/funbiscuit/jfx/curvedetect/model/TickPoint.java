@@ -1,6 +1,4 @@
-package com.funbiscuit.jfx.curvedetect;
-
-import com.funbiscuit.jfx.curvedetect.model.Vec2D;
+package com.funbiscuit.jfx.curvedetect.model;
 
 import java.util.UUID;
 

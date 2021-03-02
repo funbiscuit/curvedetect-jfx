@@ -1,7 +1,6 @@
 package com.funbiscuit.jfx.curvedetect;
 
-import com.funbiscuit.jfx.curvedetect.model.ImageWrapper;
-import com.funbiscuit.jfx.curvedetect.model.Vec2D;
+import com.funbiscuit.jfx.curvedetect.model.*;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
