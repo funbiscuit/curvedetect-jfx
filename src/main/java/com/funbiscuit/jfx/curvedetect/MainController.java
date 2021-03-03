@@ -840,8 +840,8 @@ public class MainController {
             gc.setLineWidth(2.0D);
 
             for (int i = 0; i < allPoints.size() - 1; ++i) {
-                Vec2D point1 = imageToCanvas(((ImageElement) allPoints.get(i)).getImagePos());
-                Vec2D point2 = imageToCanvas(((ImageElement) allPoints.get(i + 1)).getImagePos());
+                Vec2D point1 = imageToCanvas(allPoints.get(i).getPosition());
+                Vec2D point2 = imageToCanvas(allPoints.get(i + 1).getPosition());
 
                 gc.strokeLine(point1.getX(), point1.getY(), point2.getX(), point2.getY());
             }
@@ -853,7 +853,7 @@ public class MainController {
             if (drawSubdivisionMarkers) {
                 for (Point point : allPoints) {
                     if (point.isSubdivisionPoint()) {
-                        Vec2D pointPos = this.imageToCanvas(point.getImagePos());
+                        Vec2D pointPos = imageToCanvas(point.getPosition());
                         if (point.isSnapped()) {
                             gc.setFill(Color.gray(0.7));
                         } else {
@@ -876,17 +876,17 @@ public class MainController {
 
             Vec2D highlightPosition = null;
 
-            for (ImageElement point : userPoints) {
+            for (Point point : userPoints) {
                 if (point.getId().equals(selectedId)) {
-                    highlightPosition = point.getImagePos();
+                    highlightPosition = point.getPosition();
                     continue;
                 } else if (highlightPosition == null && point.getId().equals(hoveredId) &&
                         currentWorkMode == MainController.WorkMode.POINTS) {
-                    highlightPosition = point.getImagePos();
+                    highlightPosition = point.getPosition();
                     continue;
                 }
 
-                Vec2D pointPos = imageToCanvas(point.getImagePos());
+                Vec2D pointPos = imageToCanvas(point.getPosition());
 
                 gc.setFill(Color.LAWNGREEN);
                 gc.fillOval(pointPos.getX() - pointSize * 0.5,
@@ -1019,7 +1019,7 @@ public class MainController {
                 }
             }
 
-            Vec2D point1 = imageToCanvas(xTick.getImagePos());
+            Vec2D point1 = imageToCanvas(xTick.getPosition());
             Vec2D point2 = new Vec2D(point1);
             point2.setX(point1.getX() + horizon.getVerticalDirection().getX() * 100);
             point2.setY(point1.getY() + horizon.getVerticalDirection().getY() * 100);
@@ -1046,7 +1046,7 @@ public class MainController {
                 }
             }
 
-            Vec2D point1 = imageToCanvas(yTick.getImagePos());
+            Vec2D point1 = imageToCanvas(yTick.getPosition());
             Vec2D point2 = new Vec2D(point1);
             point2.setX(point2.getX() + horizon.getHorizontalDirection().getX() * 100);
             point2.setY(point2.getY() + horizon.getHorizontalDirection().getY() * 100);
@@ -1064,12 +1064,12 @@ public class MainController {
         ArrayList<TickPoint> yTickPoints = this.imageCurve.getYticks();
 
         for (TickPoint tick : xTickPoints) {
-            Vec2D pos = imageToCanvas(tick.getImagePos());
+            Vec2D pos = imageToCanvas(tick.getPosition());
             gc.fillText(String.valueOf(tick.getTickValue()), pos.getX(), pos.getY());
         }
 
         for (TickPoint tick : yTickPoints) {
-            Vec2D pos = imageToCanvas(tick.getImagePos());
+            Vec2D pos = imageToCanvas(tick.getPosition());
             gc.fillText(String.valueOf(tick.getTickValue()), pos.getX(), pos.getY());
         }
     }
@@ -1084,8 +1084,8 @@ public class MainController {
         gc.setLineWidth(2.0);
         gc.setStroke(Color.gray(0.0));
 
-        Vec2D origin = imageToCanvas(horizon.getImagePos());
-        Vec2D target = imageToCanvas(horizon.getTarget().getImagePos());
+        Vec2D origin = imageToCanvas(horizon.getOrigin().getPosition());
+        Vec2D target = imageToCanvas(horizon.getTarget().getPosition());
 
         gc.strokeLine(origin.getX(), origin.getY(), target.getX(), target.getY());
         UUID selectedId = imageCurve.getSelectedId();
@@ -1096,9 +1096,9 @@ public class MainController {
         gc.setFill(Color.gray(0.7D));
 
         //draw origin point
-        if (horizon.getId().equals(selectedId)) {
+        if (horizon.getOrigin().getId().equals(selectedId)) {
             gc.setFill(Color.AQUAMARINE);
-        } else if (horizon.getId().equals(hoveredId)) {
+        } else if (horizon.getOrigin().getId().equals(hoveredId)) {
             gc.setFill(Color.WHITE);
             //deleting origin will reset horizon
             if (deleteOnClick) {

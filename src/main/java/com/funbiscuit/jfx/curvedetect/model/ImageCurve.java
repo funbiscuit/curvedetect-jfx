@@ -37,21 +37,21 @@ public class ImageCurve {
     }
 
     public UUID getSelectedId() {
-        ImageElement selected = getSelectedElement();
+        ImagePoint selected = getSelectedImagePoint();
         if (selected != null)
             return selected.getId();
         return null;
     }
 
-    private ImageElement getSelectedElement() {
+    private ImagePoint getSelectedImagePoint() {
         if (selectedPoint != null)
             return selectedPoint;
         if (selectedXtick != null)
-            return selectedXtick;
+            return selectedXtick.getImagePoint();
         if (selectedYtick != null)
-            return selectedYtick;
+            return selectedYtick.getImagePoint();
         if (selectedOrigin == HorizonSettings.HorizonPoint.ORIGIN)
-            return horizonSettings;
+            return horizonSettings.getOrigin();
         if (selectedOrigin == HorizonSettings.HorizonPoint.TARGET)
             return horizonSettings.getTarget();
         return null;
@@ -66,7 +66,7 @@ public class ImageCurve {
             return hoveredYtick.getId();
         if ((type & ImageElement.Type.HORIZON) != 0 && hoveredOrigin != null) {
             if (hoveredOrigin == HorizonSettings.HorizonPoint.ORIGIN)
-                return horizonSettings.getId();
+                return horizonSettings.getOrigin().getId();
             else if (hoveredOrigin == HorizonSettings.HorizonPoint.TARGET)
                 return horizonSettings.getTarget().getId();
         }
@@ -119,21 +119,21 @@ public class ImageCurve {
     }
 
     public void dragSelected(double newX, double newY) {
-        ImageElement selected = getSelectedElement();
+        ImagePoint selected = getSelectedImagePoint();
         if (selected != null) {
             selected.setImagePos(newX, newY);
         }
     }
 
     public void snapSelected() {
-        ImageElement selected = this.getSelectedElement();
+        ImagePoint selected = getSelectedImagePoint();
         if (selected != null && image != null) {
             selected.setSnapped(image.snap(selected));
         }
     }
 
     public void unsnapSelected(double newX, double newY) {
-        ImageElement selected = this.getSelectedElement();
+        ImagePoint selected = getSelectedImagePoint();
         if (selected != null) {
             selected.setImagePos(newX, newY);
         }
@@ -186,8 +186,8 @@ public class ImageCurve {
             int rightIndex = leftIndex + step;
 
             for (int j = 1; j <= extraPointsHalf; j++) {
-                Vec2D leftPointPos = allPoints.get(leftIndex).getImagePos();
-                Vec2D rightPointPos = allPoints.get(rightIndex).getImagePos();
+                Vec2D leftPointPos = allPoints.get(leftIndex).getPosition();
+                Vec2D rightPointPos = allPoints.get(rightIndex).getPosition();
 
                 Point nextLeft = allPoints.get(leftIndex + 1);
                 Point nextRight = allPoints.get(rightIndex - 1);
@@ -217,7 +217,7 @@ public class ImageCurve {
 
     private void sortPointsArray(ArrayList<Point> array) {
         Vec2D dir = horizonSettings.getHorizontalDirection();
-        Vec2D horizonPos = horizonSettings.getImagePos();
+        Vec2D origin = horizonSettings.getOrigin().getPosition();
         double dy = dir.getY();
         double mDx = -dir.getX();
         int gridInvertion = 1;
@@ -234,10 +234,10 @@ public class ImageCurve {
                 right = xTickPoints.get(0);
             }
 
-            Vec2D p1image = left.getImagePos();
-            Vec2D p2image = right.getImagePos();
-            double p1Projection = -mDx * (p1image.getX() - horizonPos.getX()) + dy * (p1image.getY() - horizonPos.getY());
-            double p2Projection = -mDx * (p2image.getX() - horizonPos.getX()) + dy * (p2image.getY() - horizonPos.getY());
+            Vec2D p1image = left.getPosition();
+            Vec2D p2image = right.getPosition();
+            double p1Projection = -mDx * (p1image.getX() - origin.getX()) + dy * (p1image.getY() - origin.getY());
+            double p2Projection = -mDx * (p2image.getX() - origin.getX()) + dy * (p2image.getY() - origin.getY());
             if (p1Projection > p2Projection) {
                 gridInvertion = -1;
             }
@@ -246,10 +246,10 @@ public class ImageCurve {
         int gridInv = gridInvertion;
 
         array.sort((p1, p2) -> {
-            Vec2D p1image = p1.getImagePos();
-            Vec2D p2image = p2.getImagePos();
-            double p1Projection = -mDx * (p1image.getX() - horizonPos.getX()) + dy * (p1image.getY() - horizonPos.getY());
-            double p2Projection = -mDx * (p2image.getX() - horizonPos.getX()) + dy * (p2image.getY() - horizonPos.getY());
+            Vec2D p1image = p1.getPosition();
+            Vec2D p2image = p2.getPosition();
+            double p1Projection = -mDx * (p1image.getX() - origin.getX()) + dy * (p1image.getY() - origin.getY());
+            double p2Projection = -mDx * (p2image.getX() - origin.getX()) + dy * (p2image.getY() - origin.getY());
             return p1Projection < p2Projection ? -gridInv : (p1Projection > p2Projection ? gridInv : 0);
         });
 
@@ -291,7 +291,7 @@ public class ImageCurve {
         hoveredPoint = null;
 
         for (Point point : userPoints) {
-            Vec2D pos = point.getImagePos();
+            Vec2D pos = point.getPosition();
             double dx = pos.getX() - x;
             double dy = pos.getY() - y;
             double dist = dx * dx + dy * dy;
@@ -310,7 +310,7 @@ public class ImageCurve {
         Point point = new Point(x, y);
 
         for (TickPoint xTick : xTickPoints) {
-            double dist = xTick.distanceTo(point, tickDirection);
+            double dist = xTick.distanceTo(point.getPosition(), tickDirection);
             if (dist < minDist) {
                 minDist = dist;
                 hoveredXtick = xTick;
@@ -322,7 +322,7 @@ public class ImageCurve {
         double minDist = hoverZone;
         hoveredYtick = null;
         Vec2D tickDirection = horizonSettings.getHorizontalDirection();
-        Point point = new Point(x, y);
+        Vec2D point = new Vec2D(x, y);
 
         for (TickPoint yTick : yTickPoints) {
             double dist = yTick.distanceTo(point, tickDirection);
@@ -340,15 +340,15 @@ public class ImageCurve {
 
         double minDist = hoverZone * hoverZone;
 
-        Vec2D originPos = horizonSettings.getImagePos();
-        Vec2D tagetPos = horizonSettings.getTarget().getImagePos();
+        Vec2D originPos = horizonSettings.getOrigin().getPosition();
+        Vec2D targetPos = horizonSettings.getTarget().getPosition();
 
         double dx = originPos.getX() - x;
         double dy = originPos.getY() - y;
         double dist = dx * dx + dy * dy;
 
-        dx = tagetPos.getX() - x;
-        dy = tagetPos.getY() - y;
+        dx = targetPos.getX() - x;
+        dy = targetPos.getY() - y;
         double dist2 = dx * dx + dy * dy;
 
         if (dist < dist2 && dist < minDist) {
@@ -407,7 +407,7 @@ public class ImageCurve {
             return;
         Image img = image.getImage();
 
-        horizonSettings.setImagePos(img.getWidth() * 0.1, img.getHeight() * 0.5);
+        horizonSettings.getOrigin().setImagePos(img.getWidth() * 0.1, img.getHeight() * 0.5);
         horizonSettings.getTarget().setImagePos(img.getWidth() * 0.9, img.getHeight() * 0.5);
         selectedOrigin = HorizonSettings.HorizonPoint.NONE;
         hoveredOrigin = HorizonSettings.HorizonPoint.NONE;
@@ -548,7 +548,7 @@ public class ImageCurve {
             TickPoint tick0 = xTickPoints.get(0);
             TickPoint tick1 = xTickPoints.get(1);
 
-            if (tick0.distanceTo(tick1, tickDirection) < minPixelDist) {
+            if (tick0.distanceTo(tick1.getPosition(), tickDirection) < minPixelDist) {
                 result |= ExportStatus.PIXEL_OVERLAP_X_GRID;
             }
 
@@ -562,7 +562,7 @@ public class ImageCurve {
             TickPoint tick0 = yTickPoints.get(0);
             TickPoint tick1 = yTickPoints.get(1);
 
-            if (tick0.distanceTo(tick1, tickDirection) < minPixelDist) {
+            if (tick0.distanceTo(tick1.getPosition(), tickDirection) < minPixelDist) {
                 result |= ExportStatus.PIXEL_OVERLAP_Y_GRID;
             }
 
@@ -580,12 +580,12 @@ public class ImageCurve {
         //so all x and y ticks are defined
 
         Vec2D realPoint = new Vec2D(0.0D, 0.0D);
-        Vec2D x0pos = xTickPoints.get(0).getImagePos();
-        Vec2D x1pos = xTickPoints.get(1).getImagePos();
-        Vec2D y0pos = yTickPoints.get(0).getImagePos();
-        Vec2D y1pos = yTickPoints.get(1).getImagePos();
-        Vec2D horizon0pos = horizonSettings.getImagePos();
-        Vec2D horizon1pos = horizonSettings.getTarget().getImagePos();
+        Vec2D x0pos = xTickPoints.get(0).getPosition();
+        Vec2D x1pos = xTickPoints.get(1).getPosition();
+        Vec2D y0pos = yTickPoints.get(0).getPosition();
+        Vec2D y1pos = yTickPoints.get(1).getPosition();
+        Vec2D horizon0pos = horizonSettings.getOrigin().getPosition();
+        Vec2D horizon1pos = horizonSettings.getTarget().getPosition();
         double det1 = (x0pos.getX() - x1pos.getX()) * (horizon1pos.getX() - horizon0pos.getX()) +
                 (x0pos.getY() - x1pos.getY()) * (horizon1pos.getY() - horizon0pos.getY());
         double det2 = (y0pos.getX() - y1pos.getX()) * (horizon0pos.getY() - horizon1pos.getY()) -
@@ -667,41 +667,41 @@ public class ImageCurve {
         }
     }
 
-    private void convertPoints(ArrayList<? extends ImageElement> imagePoints, ArrayList<Vec2D> out_realPoints) {
+    private void convertPoints(ArrayList<Point> imagePoints, ArrayList<Vec2D> out_realPoints) {
         if (out_realPoints.size() > 0) {
             out_realPoints.clear();
         }
 
         out_realPoints.ensureCapacity(imagePoints.size());
 
-        for (ImageElement point : imagePoints) {
-            Vec2D imagePos = point.getImagePos();
+        for (Point point : imagePoints) {
+            Vec2D imagePos = point.getPosition();
             Vec2D exportPoint = imageToReal(imagePos);
             out_realPoints.add(exportPoint);
         }
     }
 
-    private void convertPoints(ArrayList<? extends ImageElement> imagePoints, double[] out_realPoints) {
+    private void convertPoints(ArrayList<Point> imagePoints, double[] out_realPoints) {
         //don't do anything if size is not enough
         if (out_realPoints.length < imagePoints.size() * 2)
             return;
 
         for (int i = 0; i < imagePoints.size(); i++) {
-            ImageElement point = imagePoints.get(i);
-            Vec2D imagePos = point.getImagePos();
-            Vec2D exportPoint = this.imageToReal(imagePos);
+            ImagePoint point = imagePoints.get(i);
+            Vec2D imagePos = point.getPosition();
+            Vec2D exportPoint = imageToReal(imagePos);
             out_realPoints[2 * i] = exportPoint.getX();
             out_realPoints[2 * i + 1] = exportPoint.getY();
         }
     }
 
-    private void copyPoints(ArrayList<? extends ImageElement> points, double[] out_Points) {
+    private void copyPoints(ArrayList<Point> points, double[] out_Points) {
         //don't do anything if size is not enough
         if (out_Points.length < points.size() * 2)
             return;
 
         for (int i = 0; i < points.size(); i++) {
-            Vec2D point = points.get(i).getImagePos();
+            Vec2D point = points.get(i).getPosition();
             out_Points[2 * i] = point.getX();
             out_Points[2 * i + 1] = point.getY();
         }

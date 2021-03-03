@@ -156,7 +156,7 @@ public class ImageWrapper {
      * @param point to snap
      * @return true if point was snapped or false if no black pixel was found nearby
      */
-    public boolean snap(ImageElement point) {
+    public boolean snap(ImagePoint point) {
         return snapToCurve(point) && snapToBary(point);
     }
 
@@ -165,7 +165,7 @@ public class ImageWrapper {
      * @param point to snap
      * @return true if point was snapped or false if no black pixel was found nearby
      */
-    private boolean snapToCurve(ImageElement point) {
+    private boolean snapToCurve(ImagePoint point) {
         // rectangular region that defines region of snapping
         int halfSide = 10;
         int side = halfSide * 2 + 1;
@@ -177,7 +177,7 @@ public class ImageWrapper {
         if (width < side * 2 || height < side * 2)
             return false;
 
-        Vec2D pos = point.getImagePos();
+        Vec2D pos = point.getPosition();
         int px = (int) pos.getX();
         int py = (int) pos.getY();
 
@@ -218,7 +218,7 @@ public class ImageWrapper {
      * @param point to snap
      * @return true if snap was successful, or false if there are no black pixels nearby
      */
-    private boolean snapToBary(ImageElement point) {
+    private boolean snapToBary(ImagePoint point) {
         // smaller region is used for barycenter calculation
         int halfSide = 4;
         int side = halfSide * 2 + 1;
@@ -230,7 +230,7 @@ public class ImageWrapper {
         if (width < side * 2 || height < side * 2)
             return false;
 
-        Vec2D pos = point.getImagePos();
+        Vec2D pos = point.getPosition();
         int px = (int) pos.getX();
         int py = (int) pos.getY();
 

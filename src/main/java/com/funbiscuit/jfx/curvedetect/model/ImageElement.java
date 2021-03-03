@@ -1,20 +1,6 @@
 package com.funbiscuit.jfx.curvedetect.model;
 
-import com.funbiscuit.jfx.curvedetect.model.Vec2D;
-
-import java.util.UUID;
-
 public interface ImageElement {
-    boolean isSnapped();
-
-    void setSnapped(boolean snapped);
-
-    UUID getId();
-
-    Vec2D getImagePos();
-
-    void setImagePos(double x, double y);
-
     final class Type {
         public static final int POINT = 1;
         public static final int X_TICK = 2;

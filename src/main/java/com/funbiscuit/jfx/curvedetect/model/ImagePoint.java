@@ -11,11 +11,14 @@ public class ImagePoint {
     private boolean isSnapped;
 
     @Getter
-    private UUID id;
+    private final UUID id = UUID.randomUUID();
 
     @Getter
-    @Setter
-    private Vec2D position;
+    private final Vec2D position;
+
+    public ImagePoint(double x, double y) {
+        position = new Vec2D(x, y);
+    }
 
     public void setImagePos(double x, double y) {
         position.setX(x);
