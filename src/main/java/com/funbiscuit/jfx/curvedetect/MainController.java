@@ -8,15 +8,18 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Point2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -35,7 +38,6 @@ public class MainController {
     private final ImageCurve imageCurve;
     private final ObjectProperty<WorkMode> workMode = new SimpleObjectProperty<>();
     private final BooleanProperty deleteMode = new SimpleBooleanProperty(false);
-    public Parent tickPopup;
     public TickPopupController tickPopupController;
     private ImageWrapper image;
     private ContextMenu contextMenu;
@@ -44,17 +46,18 @@ public class MainController {
     private int subdivideIterations = 3;
     private boolean isSaveReady;
     private String decimalSeparator = ".";
-    private Stage stage;
+
+
+    private final ObjectProperty<Window> window= new SimpleObjectProperty<>();
+
+    @FXML
+    public HBox rootComponent;
     @FXML
     private Slider subdivisionSlider;
-    @FXML
-    private Label subdivisionLabel;
     @FXML
     private Label subdivisionValueLabel;
     @FXML
     private Slider binarizationSlider;
-    @FXML
-    private Label binarizationLabel;
     @FXML
     private Label binarizationValueLabel;
     @FXML
@@ -72,15 +75,9 @@ public class MainController {
     @FXML
     private Button exportButton;
     @FXML
-    private Label columnSeparatorLabel;
-    @FXML
-    private Label lineEndingLabel;
-    @FXML
     private TextField columnSeparatorValueField;
     @FXML
     private TextField lineEndingValueField;
-    @FXML
-    private Label decimalSeparatorLabel;
     @FXML
     private Label tipsLabel;
     @FXML
@@ -109,63 +106,21 @@ public class MainController {
         imageCurve = new ImageCurve();
     }
 
-    public void setTickPopup(Parent tickPopup) {
-        this.tickPopup = tickPopup;
-    }
-
-    public void setTickPopupController(TickPopupController tickPopupController) {
-        this.tickPopupController = tickPopupController;
-    }
-
     private void setupBindings() {
+        // setup binding of window property so we can create modal dialogs
+        rootComponent.sceneProperty().addListener(o -> {
+            Scene scene = rootComponent.getScene();
+            if(scene == null)
+                return;
+            if(window.isBound())
+                window.unbind();
+            window.bind(scene.windowProperty());
+            //TODO will not work if windows change
+            window.addListener((obj, old, newVal) -> createWindowEventHandlers());
+        });
+
         mainCanvas.getDeleteMode().bind(deleteMode);
         mainCanvas.getWorkMode().bind(workMode);
-    }
-
-    public void init(Stage stage) {
-        this.stage = stage;
-
-        mainCanvas.redrawCanvas(false);
-
-        //TODO use Stage(StageStyle.TRANSPARENT)
-        tickDialog = new Stage();
-        tickPopupController.init(tickDialog);
-        tickDialog.setResizable(false);
-        tickDialog.initModality(Modality.WINDOW_MODAL);
-        tickDialog.initOwner(stage);
-        tickDialog.setTitle(resources.getString("tickDialogTitle"));
-
-        tickDialog.setScene(new Scene(tickPopup, 230, 140));
-        contextMenu = new ContextMenu();
-        contextMenu.getItems().addAll(openImageItem, pointsItem, horizonItem, itemGrid);
-
-        openImageButton.addEventHandler(ActionEvent.ACTION, it -> openImage());
-
-        copyToClipboardButton.addEventHandler(ActionEvent.ACTION, it -> copyPoints());
-
-        exportButton.addEventHandler(ActionEvent.ACTION, it -> exportPoints());
-        openImageItem.setOnAction((it -> openImage()));
-        pointsItem.setOnAction((it -> {
-            workMode.set(WorkMode.POINTS);
-            updateControls();
-        }));
-        horizonItem.setOnAction((it -> {
-            workMode.set(WorkMode.HORIZON);
-            updateControls();
-        }));
-        itemGrid.setOnAction((it -> {
-            workMode.set(imageCurve.isXgridReady() && !imageCurve.isYgridReady() ?
-                    WorkMode.Y_TICKS : WorkMode.X_TICKS);
-            updateControls();
-        }));
-        decimalSeparatorComboBox.getItems().addAll(
-                resources.getString("decimalSeparator.dot"),
-                resources.getString("decimalSeparator.comma")
-        );
-        decimalSeparatorComboBox.getSelectionModel().select(0);
-        addPropertyListeners();
-        createEventHandlers();
-        updateControls();
     }
 
     private void addPropertyListeners() {
@@ -215,7 +170,7 @@ public class MainController {
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Mat", "*.mat"));
         chooser.setInitialDirectory(new File("."));
 
-        File file = chooser.showSaveDialog(stage);
+        File file = chooser.showSaveDialog(window.get());
         if (file != null) {
             String s = file.toString();
             if (s.endsWith(".txt")) {
@@ -420,15 +375,17 @@ public class MainController {
 
         tickPopupController.setTickValue(selected.getTickValue(), selected.isNew());
 
+        if(tickDialog.getOwner() == null)
+            tickDialog.initOwner(window.get());
+
         tickDialog.show();
+        Window stage = window.get();
         tickDialog.setX(stage.getX() + stage.getWidth() * 0.5 - tickDialog.getWidth() * 0.5);
         tickDialog.setY(stage.getY() + stage.getHeight() * 0.5 - tickDialog.getHeight() * 0.5);
     }
 
-    private void createEventHandlers() {
-        tickDialog.setOnHiding(it -> handleTickInput());
-
-        stage.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+    private void createWindowEventHandlers() {
+        window.get().addEventHandler(KeyEvent.KEY_PRESSED, e -> {
             if (e.getCode() == KeyCode.CONTROL) {
                 onCtrlInput(false);
             } else if (e.getCode() == KeyCode.SHIFT) {
@@ -441,7 +398,7 @@ public class MainController {
             mainCanvas.redrawCanvas(false);
         });
 
-        stage.addEventHandler(KeyEvent.KEY_RELEASED, e -> {
+        window.get().addEventHandler(KeyEvent.KEY_RELEASED, e -> {
             if (e.getCode() == KeyCode.CONTROL) {
                 onCtrlInput(true);
             } else if (e.getCode() == KeyCode.SHIFT) {
@@ -453,6 +410,11 @@ public class MainController {
             e.consume();
             mainCanvas.redrawCanvas(false);
         });
+    }
+
+    private void createEventHandlers() {
+        tickDialog.setOnHiding(it -> handleTickInput());
+
         mainCanvas.setOnScroll(it -> {
             double zoomFactor = 1.3;
             if (ctrlPressed) {
@@ -675,7 +637,7 @@ public class MainController {
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("pictures", "*.jpg", "*.png", "*.bmp"));
         chooser.setInitialDirectory(new File("."));
 
-        File file = chooser.showOpenDialog(stage);
+        File file = chooser.showOpenDialog(window.get());
         if (file == null) {
             return;
         }
@@ -702,13 +664,70 @@ public class MainController {
         //TODO update tips
     }
 
+    private void initTickDialog() {
+        // create tick popup
+        FXMLLoader popupLoader = new FXMLLoader();
+        popupLoader.setLocation(Main.class.getResource("tick_popup.fxml"));
+        popupLoader.setResources(Main.getResourceBundle());
+        Parent tickPopup;
+        try {
+            tickPopup = popupLoader.load();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create tick popup", e);
+        }
+        tickPopupController = popupLoader.getController();
+
+        //TODO use Stage(StageStyle.TRANSPARENT)
+        tickDialog = new Stage();
+        tickDialog.setResizable(false);
+        tickDialog.initModality(Modality.WINDOW_MODAL);
+        tickDialog.setTitle(resources.getString("tickDialogTitle"));
+        tickDialog.setScene(new Scene(tickPopup, 230, 140));
+    }
+
     /**
      * Called after FXML finished loading and all properties are ready
      */
     public void initialize() {
+        rootComponent.getStylesheets().add(MainController.class
+                .getResource("main.css").toExternalForm());
+
         mainCanvas.setImageCurve(imageCurve);
 
+        initTickDialog();
+
         setupBindings();
+
+        contextMenu = new ContextMenu();
+        contextMenu.getItems().addAll(openImageItem, pointsItem, horizonItem, itemGrid);
+
+        openImageButton.addEventHandler(ActionEvent.ACTION, it -> openImage());
+
+        copyToClipboardButton.addEventHandler(ActionEvent.ACTION, it -> copyPoints());
+
+        exportButton.addEventHandler(ActionEvent.ACTION, it -> exportPoints());
+        openImageItem.setOnAction((it -> openImage()));
+        pointsItem.setOnAction((it -> {
+            workMode.set(WorkMode.POINTS);
+            updateControls();
+        }));
+        horizonItem.setOnAction((it -> {
+            workMode.set(WorkMode.HORIZON);
+            updateControls();
+        }));
+        itemGrid.setOnAction((it -> {
+            workMode.set(imageCurve.isXgridReady() && !imageCurve.isYgridReady() ?
+                    WorkMode.Y_TICKS : WorkMode.X_TICKS);
+            updateControls();
+        }));
+        decimalSeparatorComboBox.getItems().addAll(
+                resources.getString("decimalSeparator.dot"),
+                resources.getString("decimalSeparator.comma")
+        );
+        decimalSeparatorComboBox.getSelectionModel().select(0);
+        addPropertyListeners();
+        createEventHandlers();
+        updateControls();
     }
 
     public enum WorkMode {

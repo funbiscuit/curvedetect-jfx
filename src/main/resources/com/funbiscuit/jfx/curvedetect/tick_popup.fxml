@@ -6,6 +6,7 @@
 <AnchorPane prefHeight="140.0" prefWidth="220.0" stylesheets="@modena_dark.css"
             xmlns="http://javafx.com/javafx/10.0.2-internal"
             xmlns:fx="http://javafx.com/fxml/1"
+            fx:id="rootComponent"
             fx:controller="com.funbiscuit.jfx.curvedetect.TickPopupController">
     <VBox alignment="CENTER">
         <Label fx:id="tickTipLabel" alignment="CENTER" prefWidth="220.0"

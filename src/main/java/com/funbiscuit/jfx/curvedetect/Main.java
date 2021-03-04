@@ -16,31 +16,24 @@ public class Main extends Application {
         Main.launch();
     }
 
+    public static ResourceBundle getResourceBundle() {
+        return ResourceBundle.getBundle("com.funbiscuit.jfx.curvedetect.strings", Locale.ENGLISH);
+    }
+
     @Override
     public void start(Stage stage) throws IOException {
-        ResourceBundle bundle = ResourceBundle.getBundle("com.funbiscuit.jfx.curvedetect.strings", Locale.ENGLISH);
-        FXMLLoader fxmlLoader = new FXMLLoader();
-        FXMLLoader popupLoader = new FXMLLoader();
+        ResourceBundle bundle = getResourceBundle();
 
+        FXMLLoader fxmlLoader = new FXMLLoader();
         fxmlLoader.setLocation(Main.class.getResource("sample.fxml"));
-        popupLoader.setLocation(Main.class.getResource("tick_popup.fxml"));
         fxmlLoader.setResources(bundle);
-        popupLoader.setResources(bundle);
 
         Parent root = fxmlLoader.load();
-        Parent tickPopup = popupLoader.load();
-
-        root.getStylesheets().add(Main.class.getResource("main.css").toExternalForm());
 
         stage.setScene(new Scene(root, 1280, 720));
-        stage.setMinWidth(1280);
-        stage.setMinHeight(720);
+        stage.setMinWidth(800);
+        stage.setMinHeight(600);
         stage.setTitle(bundle.getString("title"));
         stage.show();
-        MainController controller = fxmlLoader.getController();
-        TickPopupController tickController = popupLoader.getController();
-        controller.setTickPopup(tickPopup);
-        controller.setTickPopupController(tickController);
-        controller.init(stage);
     }
 }

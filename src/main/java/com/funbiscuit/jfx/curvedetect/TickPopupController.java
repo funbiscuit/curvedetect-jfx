@@ -4,24 +4,24 @@ package com.funbiscuit.jfx.curvedetect;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 public class TickPopupController {
     @FXML
-    private TextField tickValueText;
+    private Parent rootComponent;
     @FXML
-    private Label tickTipLabel;
+    private TextField tickValueText;
     @FXML
     private Button tickApprove;
     @FXML
     private Button tickCancel;
     @FXML
     private Button tickDelete;
-    private Stage stage;
 
     private String tickValue = "";
     private boolean wasCanceled = true;
@@ -60,15 +60,28 @@ public class TickPopupController {
         return value;
     }
 
-    public void init(Stage stage) {
-        this.stage = stage;
-        stage.addEventHandler(WindowEvent.WINDOW_SHOWN, it -> {
-            tickValueText.requestFocus();
-            tickValueText.selectAll();
-        });
+    private void closePopup() {
+        ((Stage) rootComponent.getScene().getWindow()).close();
     }
 
+    /**
+     * Called after FXML finished loading and all properties are ready
+     */
     public void initialize() {
+        rootComponent.sceneProperty().addListener(o -> {
+            Scene scene = rootComponent.getScene();
+            if (scene == null)
+                return;
+            //TODO will not work if windows change
+            scene.windowProperty().addListener((obj, old, newVal) -> {
+                newVal.addEventHandler(WindowEvent.WINDOW_SHOWN, it -> {
+                    tickValueText.requestFocus();
+                    tickValueText.selectAll();
+                });
+            });
+        });
+
+
         //setting it in fxml doesn't work in native image
         tickValueText.setAlignment(Pos.CENTER);
 
@@ -81,25 +94,25 @@ public class TickPopupController {
         tickValueText.addEventHandler(ActionEvent.ACTION, e -> {
             wasCanceled = false;
             deleteTick = false;
-            stage.close();
+            closePopup();
         });
 
         tickApprove.addEventHandler(ActionEvent.ACTION, it -> {
             wasCanceled = false;
             deleteTick = false;
-            stage.close();
+            closePopup();
         });
 
         tickCancel.addEventHandler(ActionEvent.ACTION, it -> {
             wasCanceled = !isNew;
             deleteTick = isNew;
-            stage.close();
+            closePopup();
         });
 
         tickDelete.addEventHandler(ActionEvent.ACTION, it -> {
             wasCanceled = false;
             deleteTick = true;
-            stage.close();
+            closePopup();
         });
     }
 }

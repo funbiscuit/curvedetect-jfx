@@ -9,7 +9,8 @@
       xmlns="http://javafx.com/javafx/8.0.172-ea"
       xmlns:fx="http://javafx.com/fxml/1"
       stylesheets="@modena_dark.css"
-      fx:controller="com.funbiscuit.jfx.curvedetect.MainController">
+      fx:controller="com.funbiscuit.jfx.curvedetect.MainController"
+      fx:id="rootComponent">
     <AnchorPane maxWidth="280.0" minHeight="0.0" minWidth="280.0"
                 prefWidth="280.0">
         <VBox fx:id="settingsVBox" maxWidth="280.0" prefWidth="280.0"
