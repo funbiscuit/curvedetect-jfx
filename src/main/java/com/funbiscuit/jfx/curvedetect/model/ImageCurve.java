@@ -1,6 +1,8 @@
 package com.funbiscuit.jfx.curvedetect.model;
 
 import javafx.scene.image.Image;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.UUID;
@@ -21,6 +23,9 @@ public class ImageCurve {
     private TickPoint selectedYtick;
     private HorizonSettings.HorizonPoint hoveredOrigin;
     private HorizonSettings.HorizonPoint selectedOrigin;
+
+    @Getter
+    @Setter
     private ImageWrapper image;
     private int subdivideIterations;
 
@@ -391,10 +396,6 @@ public class ImageCurve {
                 resetHorizon();
             }
         }
-    }
-
-    public void setImage(ImageWrapper image) {
-        this.image = image;
     }
 
     public void setSubdivision(int value) {

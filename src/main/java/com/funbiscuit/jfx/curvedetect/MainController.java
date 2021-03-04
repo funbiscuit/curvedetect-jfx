@@ -2,18 +2,18 @@ package com.funbiscuit.jfx.curvedetect;
 
 import com.funbiscuit.jfx.curvedetect.model.*;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.input.*;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -24,11 +24,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
-import java.util.UUID;
 
 public class MainController {
-    private final Vec2D defaultImageOffset = new Vec2D(0, 0);
-    private final Vec2D currentImageOffset = new Vec2D(0, 0);
     private final MenuItem openImageItem;
     private final MenuItem pointsItem;
     private final MenuItem horizonItem;
@@ -36,23 +33,16 @@ public class MainController {
     private final Vec2D mousePosition;
     private final Vec2D previousMousePosition;
     private final ImageCurve imageCurve;
+    private final ObjectProperty<WorkMode> workMode = new SimpleObjectProperty<>();
+    private final BooleanProperty deleteMode = new SimpleBooleanProperty(false);
     public Parent tickPopup;
     public TickPopupController tickPopupController;
     private ImageWrapper image;
-    private MainController.WorkMode currentWorkMode;
-    private GraphicsContext gc;
-    //with this parameters image will be fit to canvas and centered
-    private double defaultImageScale = 1;
-    private double currentImageScale = 1;
     private ContextMenu contextMenu;
     private Stage tickDialog;
-    private boolean deleteOnClick;
     private boolean ctrlPressed;
     private int subdivideIterations = 3;
-    private boolean drawSubdivisionMarkers = true;
-    private boolean showImage = true;
     private boolean isSaveReady;
-    private boolean showBinarization;
     private String decimalSeparator = ".";
     private Stage stage;
     @FXML
@@ -109,7 +99,7 @@ public class MainController {
     private ResourceBundle resources;
 
     public MainController() {
-        currentWorkMode = MainController.WorkMode.NONE;
+        workMode.set(WorkMode.NONE);
         openImageItem = new MenuItem("open");
         pointsItem = new MenuItem("points");
         horizonItem = new MenuItem("horizon");
@@ -127,10 +117,15 @@ public class MainController {
         this.tickPopupController = tickPopupController;
     }
 
+    private void setupBindings() {
+        mainCanvas.getDeleteMode().bind(deleteMode);
+        mainCanvas.getWorkMode().bind(workMode);
+    }
+
     public void init(Stage stage) {
         this.stage = stage;
 
-        redrawCanvas(false);
+        mainCanvas.redrawCanvas(false);
 
         //TODO use Stage(StageStyle.TRANSPARENT)
         tickDialog = new Stage();
@@ -151,15 +146,16 @@ public class MainController {
         exportButton.addEventHandler(ActionEvent.ACTION, it -> exportPoints());
         openImageItem.setOnAction((it -> openImage()));
         pointsItem.setOnAction((it -> {
-            currentWorkMode = WorkMode.POINTS;
+            workMode.set(WorkMode.POINTS);
             updateControls();
         }));
         horizonItem.setOnAction((it -> {
-            currentWorkMode = WorkMode.HORIZON;
+            workMode.set(WorkMode.HORIZON);
             updateControls();
         }));
         itemGrid.setOnAction((it -> {
-            currentWorkMode = imageCurve.isXgridReady() && !imageCurve.isYgridReady() ? WorkMode.Y_TICKS : WorkMode.X_TICKS;
+            workMode.set(imageCurve.isXgridReady() && !imageCurve.isYgridReady() ?
+                    WorkMode.Y_TICKS : WorkMode.X_TICKS);
             updateControls();
         }));
         decimalSeparatorComboBox.getItems().addAll(
@@ -181,49 +177,36 @@ public class MainController {
                 subdivisionValueLabel.setText(Integer.toString(subdivideIterations));
                 subdivisionSlider.setValue(subdivideIterations);
                 imageCurve.setSubdivision(subdivideIterations);
-                redrawCanvas();
+                mainCanvas.redrawCanvas();
             }
         });
 
         binarizationSlider.valueProperty().addListener((o, old, newValue) -> {
             if (image != null && image.getThreshold() != newValue.intValue()) {
                 image.setThreshold(newValue.intValue());
-                image.updateBinarization(() -> Platform.runLater(this::redrawCanvas));
+                image.updateBinarization(() -> Platform.runLater(() -> mainCanvas.redrawCanvas()));
             }
             binarizationValueLabel.setText(Integer.toString(newValue.intValue()));
         });
 
         drawSubMarkers.selectedProperty().addListener((o, old, newValue) -> {
-            drawSubdivisionMarkers = newValue;
-            redrawCanvas(false);
+            mainCanvas.setDrawSubdivisionMarkers(newValue);
+            mainCanvas.redrawCanvas(false);
         });
 
         showImageToggle.selectedProperty().addListener((o, old, newValue) -> {
-            showImage = newValue;
-            redrawCanvas(false);
+            mainCanvas.setShowImage(newValue);
+            mainCanvas.redrawCanvas(false);
         });
 
         showBinarizationToggle.selectedProperty().addListener((o, old, newValue) -> {
-            showBinarization = newValue;
-            redrawCanvas(false);
+            mainCanvas.setShowBinarization(newValue);
+            mainCanvas.redrawCanvas(false);
         });
 
         decimalSeparatorComboBox.getSelectionModel().selectedIndexProperty().addListener(
                 (o, old, newValue) -> decimalSeparator = newValue.equals(1) ? "," : "."
         );
-    }
-
-    private void redrawCanvas() {
-        redrawCanvas(true);
-    }
-
-    private void redrawCanvas(boolean sortPoints) {
-        cleanCanvas();
-        if (sortPoints) {
-            this.imageCurve.sortPoints();
-        }
-
-        drawElements();
     }
 
     private void exportPoints() {
@@ -415,33 +398,23 @@ public class MainController {
         }
 
         if (imageCurve.isXgridReady() && !imageCurve.isYgridReady()) {
-            currentWorkMode = MainController.WorkMode.Y_TICKS;
+            workMode.set(WorkMode.Y_TICKS);
         } else if (imageCurve.isYgridReady() && !imageCurve.isXgridReady()) {
-            currentWorkMode = MainController.WorkMode.X_TICKS;
+            workMode.set(WorkMode.X_TICKS);
         }
 
         ctrlPressed = false;
-        Vec2D imagePos = canvasToImage(mousePosition);
+        Vec2D imagePos = mainCanvas.canvasToImage(mousePosition);
         imageCurve.updateHoveredElement(imagePos.getX(), imagePos.getY());
-        redrawCanvas(false);
+        mainCanvas.redrawCanvas(false);
         updateControls();
-    }
-
-    private Vec2D canvasToImage(Vec2D canvasPosition) {
-        return new Vec2D((canvasPosition.getX() - currentImageOffset.getX()) / currentImageScale,
-                (canvasPosition.getY() - currentImageOffset.getY()) / currentImageScale);
-    }
-
-    private Vec2D imageToCanvas(Vec2D imagePosition) {
-        return new Vec2D(imagePosition.getX() * currentImageScale + currentImageOffset.getX(),
-                imagePosition.getY() * currentImageScale + currentImageOffset.getY());
     }
 
     private void showTickInput() {
         TickPoint selected = imageCurve.getSelectedTick();
 
         if (selected == null) {
-            this.redrawCanvas(false);
+            mainCanvas.redrawCanvas(false);
             return;
         }
 
@@ -465,7 +438,7 @@ public class MainController {
             }
 
             e.consume();
-            redrawCanvas(false);
+            mainCanvas.redrawCanvas(false);
         });
 
         stage.addEventHandler(KeyEvent.KEY_RELEASED, e -> {
@@ -478,7 +451,7 @@ public class MainController {
             }
 
             e.consume();
-            redrawCanvas(false);
+            mainCanvas.redrawCanvas(false);
         });
         mainCanvas.setOnScroll(it -> {
             double zoomFactor = 1.3;
@@ -486,11 +459,11 @@ public class MainController {
                 zoomFactor = 1.15;
             }
 
-            if (it.getDeltaY() < (double) 0) {
+            if (it.getDeltaY() < 0) {
                 zoomFactor = 2.0 - zoomFactor;
             }
 
-            zoomImage(zoomFactor);
+            mainCanvas.zoomImage(mousePosition, zoomFactor);
         });
 
         mainCanvas.addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
@@ -535,82 +508,24 @@ public class MainController {
         }));
     }
 
-    private void zoomImage(double zoomFactor) {
-        double maxZoom = 5.0D;
-        Vec2D currentImagePoint = canvasToImage(mousePosition);
-        currentImageScale *= zoomFactor;
-        if (currentImageScale > maxZoom) {
-            currentImageScale = maxZoom;
-        }
-
-        Vec2D newCanvasPosition = imageToCanvas(currentImagePoint);
-        currentImageOffset.setX(currentImageOffset.getX() - (newCanvasPosition.getX() - mousePosition.getX()));
-        currentImageOffset.setY(currentImageOffset.getY() - (newCanvasPosition.getY() - mousePosition.getY()));
-        if (currentImageScale < defaultImageScale) {
-            fitImage(false);
-        } else {
-            checkImageOffset();
-        }
-
-        redrawCanvas(false);
-    }
-
-    private void checkImageOffset() {
-        if (image == null) {
-            return;
-        }
-        Image img = image.getImage();
-        if (currentImageOffset.getX() > defaultImageOffset.getX()) {
-            currentImageOffset.setX(defaultImageOffset.getX());
-        }
-
-        if (currentImageOffset.getY() > defaultImageOffset.getY()) {
-            currentImageOffset.setY(defaultImageOffset.getY());
-        }
-
-        if (currentImageOffset.getX() < mainCanvas.getWidth() - defaultImageOffset.getX() - img.getWidth() * currentImageScale) {
-            currentImageOffset.setX(mainCanvas.getWidth() - defaultImageOffset.getX() - img.getWidth() * currentImageScale);
-        }
-
-        if (currentImageOffset.getY() < mainCanvas.getHeight() - defaultImageOffset.getY() - img.getHeight() * currentImageScale) {
-            currentImageOffset.setY(mainCanvas.getHeight() - defaultImageOffset.getY() - img.getHeight() * currentImageScale);
-        }
-    }
-
-    private void fitImage(boolean redraw) {
-        currentImageScale = defaultImageScale;
-        currentImageOffset.setX(defaultImageOffset.getX());
-        currentImageOffset.setY(defaultImageOffset.getY());
-
-        if (redraw)
-            redrawCanvas(false);
-    }
-
-    private void panImage(double deltaX, double deltaY) {
-        currentImageOffset.setX(currentImageOffset.getX() + deltaX);
-        currentImageOffset.setY(currentImageOffset.getY() + deltaY);
-        checkImageOffset();
-        redrawCanvas(false);
-    }
-
     private void onCtrlInput(boolean released) {
         if (released) {
             ctrlPressed = false;
-            Vec2D imagePos = this.canvasToImage(mousePosition);
+            Vec2D imagePos = mainCanvas.canvasToImage(mousePosition);
             imageCurve.unsnapSelected(imagePos.getX(), imagePos.getY());
         } else {
             ctrlPressed = true;
             imageCurve.snapSelected();
         }
-        redrawCanvas();
+        mainCanvas.redrawCanvas();
         updateControls();
     }
 
     private void onShiftInput(boolean released) {
         if (released) {
-            deleteOnClick = false;
+            deleteMode.set(false);
         } else if (imageCurve.getSelectedId() == null) {
-            deleteOnClick = true;
+            deleteMode.set(true);
         }
 
         updateControls();
@@ -618,28 +533,28 @@ public class MainController {
 
     private void onMouseDrag(MouseButton button) {
         if (button == MouseButton.PRIMARY) {
-            switch (currentWorkMode) {
+            switch (workMode.get()) {
                 case POINTS:
                 case X_TICKS:
                 case Y_TICKS:
                 case HORIZON:
-                    Vec2D imagePos = canvasToImage(mousePosition);
+                    Vec2D imagePos = mainCanvas.canvasToImage(mousePosition);
                     imageCurve.dragSelected(imagePos.getX(), imagePos.getY());
 
-                    deleteOnClick = false;
+                    deleteMode.set(false);
                     if (ctrlPressed) {
                         imageCurve.snapSelected();
                     }
-                    if (currentWorkMode == WorkMode.POINTS ||
-                            currentWorkMode == WorkMode.HORIZON) {
+                    if (workMode.get() == WorkMode.POINTS ||
+                            workMode.get() == WorkMode.HORIZON) {
                         imageCurve.sortPoints();
                     }
                     break;
             }
             updateControls();
-            redrawCanvas(false);
+            mainCanvas.redrawCanvas(false);
         } else if (button == MouseButton.MIDDLE) {
-            panImage(mousePosition.getX() - previousMousePosition.getX(),
+            mainCanvas.panImage(mousePosition.getX() - previousMousePosition.getX(),
                     mousePosition.getY() - previousMousePosition.getY());
         }
     }
@@ -651,10 +566,10 @@ public class MainController {
             if (contextMenu.isShowing()) {
                 contextMenu.hide();
             } else {
-                Vec2D imagePos = canvasToImage(mousePosition);
+                Vec2D imagePos = mainCanvas.canvasToImage(mousePosition);
 
                 imageCurve.updateHoveredElement(imagePos.getX(), imagePos.getY());
-                switch (currentWorkMode) {
+                switch (workMode.get()) {
                     case NONE:
                         break;
                     case POINTS:
@@ -691,7 +606,7 @@ public class MainController {
                         break;
 
                 }
-                redrawCanvas(false);
+                mainCanvas.redrawCanvas(false);
             }
 
             consumed = true;
@@ -710,9 +625,10 @@ public class MainController {
 
     private void showContextMenu(double x, double y) {
         openImageItem.setVisible(image == null);
-        pointsItem.setDisable(image == null || currentWorkMode == MainController.WorkMode.POINTS);
-        itemGrid.setDisable(image == null || currentWorkMode == MainController.WorkMode.X_TICKS || currentWorkMode == MainController.WorkMode.Y_TICKS);
-        horizonItem.setDisable(image == null || currentWorkMode == MainController.WorkMode.HORIZON);
+        pointsItem.setDisable(image == null || workMode.get() == MainController.WorkMode.POINTS);
+        itemGrid.setDisable(image == null || workMode.get() == MainController.WorkMode.X_TICKS ||
+                workMode.get() == MainController.WorkMode.Y_TICKS);
+        horizonItem.setDisable(image == null || workMode.get() == MainController.WorkMode.HORIZON);
 
 
         contextMenu.show(mainCanvas, x, y);
@@ -721,10 +637,10 @@ public class MainController {
     private void onMouseRelease(MouseEvent e) {
         if (e.getButton() == MouseButton.PRIMARY) {
 //            updateHoveredElement(e.x,e.y)
-            switch (currentWorkMode) {
+            switch (workMode.get()) {
                 case X_TICKS:
                 case Y_TICKS:
-                    if (deleteOnClick) {
+                    if (deleteMode.get()) {
                         imageCurve.deleteSelected();
                     } else if (imageCurve.getSelectedTick() != null) {
                         showTickInput();
@@ -732,7 +648,7 @@ public class MainController {
                     break;
                 case POINTS:
                 case HORIZON:
-                    if (deleteOnClick) {
+                    if (deleteMode.get()) {
                         //by using delete selected we can make sure that horizon
                         // will be reset only if it is selected
                         imageCurve.deleteSelected();
@@ -741,17 +657,17 @@ public class MainController {
                     break;
             }
 
-            deleteOnClick = e.isShiftDown();
+            deleteMode.set(e.isShiftDown());
         }
 
         updateControls();
-        redrawCanvas(false);
+        mainCanvas.redrawCanvas(false);
     }
 
     private void onMouseMove() {
-        Vec2D imagePos = canvasToImage(mousePosition);
+        Vec2D imagePos = mainCanvas.canvasToImage(mousePosition);
         imageCurve.updateHoveredElement(imagePos.getX(), imagePos.getY());
-        this.redrawCanvas(false);
+        mainCanvas.redrawCanvas(false);
     }
 
     private void openImage() {
@@ -767,11 +683,11 @@ public class MainController {
         image.setThreshold((int) binarizationSlider.getValue());
         imageCurve.setImage(image);
         imageCurve.resetPoints();
-        updateImageTransform();
-        currentWorkMode = MainController.WorkMode.POINTS;
+        mainCanvas.updateImageTransform();
+        workMode.set(WorkMode.POINTS);
         imageCurve.resetHorizon();
-        fitImage(false);
-        redrawCanvas(false);
+        mainCanvas.fitImage(false);
+        mainCanvas.redrawCanvas(false);
         updateControls();
     }
 
@@ -786,357 +702,13 @@ public class MainController {
         //TODO update tips
     }
 
-    private void cleanCanvas() {
-        gc.setFill(Color.gray(0.17));
-        gc.fillRect(0.0D, 0.0D, mainCanvas.getWidth(), mainCanvas.getHeight());
-
-        drawImage();
-    }
-
-    private void updateImageTransform() {
-        //called when image scale and offset have changed
-
-        if (image == null) {
-            return;
-        }
-
-        Image img = image.getImage();
-
-        double w = img.getWidth();
-        double h = img.getHeight();
-        double imgAspect = w / h;
-
-
-        double canvasAspect = mainCanvas.getWidth() / mainCanvas.getHeight();
-        if (imgAspect < canvasAspect) {
-            w *= mainCanvas.getHeight() / h;
-            h = mainCanvas.getHeight();
-        } else {
-            h *= mainCanvas.getWidth() / w;
-            w = mainCanvas.getWidth();
-        }
-
-        defaultImageScale = w / img.getWidth();
-        defaultImageOffset.setX((mainCanvas.getWidth() - w) * 0.5);
-        defaultImageOffset.setY((mainCanvas.getHeight() - h) * 0.5);
-    }
-
-    private void drawImage() {
-        if (image == null || !showImage)
-            return;
-        Image img = showBinarization ? image.getBwImage() : image.getImage();
-
-        gc.drawImage(img, currentImageOffset.getX(), currentImageOffset.getY(),
-                currentImageScale * img.getWidth(), currentImageScale * img.getHeight());
-    }
-
-    private void drawPoints() {
-        ArrayList<Point> allPoints = imageCurve.getAllPoints();
-        ArrayList<Point> userPoints = imageCurve.getUserPoints();
-
-        if (allPoints.size() != 0) {
-            gc.setFill(Color.gray(1.0));
-            gc.setStroke(Color.gray(0.5));
-            gc.setLineWidth(2.0D);
-
-            for (int i = 0; i < allPoints.size() - 1; ++i) {
-                Vec2D point1 = imageToCanvas(allPoints.get(i).getPosition());
-                Vec2D point2 = imageToCanvas(allPoints.get(i + 1).getPosition());
-
-                gc.strokeLine(point1.getX(), point1.getY(), point2.getX(), point2.getY());
-            }
-
-            double pointSize = 6.0;
-
-            gc.setLineWidth(1.0);
-            gc.setStroke(Color.gray(0.0));
-            if (drawSubdivisionMarkers) {
-                for (Point point : allPoints) {
-                    if (point.isSubdivisionPoint()) {
-                        Vec2D pointPos = imageToCanvas(point.getPosition());
-                        if (point.isSnapped()) {
-                            gc.setFill(Color.gray(0.7));
-                        } else {
-                            gc.setFill(Color.ORANGERED);
-                        }
-
-
-                        gc.fillOval(pointPos.getX() - pointSize * 0.5,
-                                pointPos.getY() - pointSize * 0.5, pointSize, pointSize);
-                        gc.strokeOval(pointPos.getX() - pointSize * 0.5,
-                                pointPos.getY() - pointSize * 0.5, pointSize, pointSize);
-                    }
-                }
-            }
-
-            gc.setFill(Color.LAWNGREEN);
-            pointSize = 10.0;
-            UUID selectedId = imageCurve.getSelectedId();
-            UUID hoveredId = imageCurve.getHoveredId(ImageElement.Type.POINT);
-
-            Vec2D highlightPosition = null;
-
-            for (Point point : userPoints) {
-                if (point.getId().equals(selectedId)) {
-                    highlightPosition = point.getPosition();
-                    continue;
-                } else if (highlightPosition == null && point.getId().equals(hoveredId) &&
-                        currentWorkMode == MainController.WorkMode.POINTS) {
-                    highlightPosition = point.getPosition();
-                    continue;
-                }
-
-                Vec2D pointPos = imageToCanvas(point.getPosition());
-
-                gc.setFill(Color.LAWNGREEN);
-                gc.fillOval(pointPos.getX() - pointSize * 0.5,
-                        pointPos.getY() - pointSize * 0.5, pointSize, pointSize);
-                gc.strokeOval(pointPos.getX() - pointSize * 0.5,
-                        pointPos.getY() - pointSize * 0.5, pointSize, pointSize);
-            }
-
-            if (highlightPosition != null) {
-                if (selectedId != null) {
-                    gc.setFill(Color.AQUAMARINE);
-                } else {
-                    gc.setFill(Color.WHITE);
-                    if (deleteOnClick) {
-                        gc.setFill(Color.RED);
-                    }
-                }
-
-                Vec2D pointPos = imageToCanvas(highlightPosition);
-
-                gc.setLineWidth(1);
-                gc.setStroke(Color.gray(0));
-                gc.fillOval(pointPos.getX() - 5, pointPos.getY() - 5, 10, 10);
-                gc.strokeOval(pointPos.getX() - 5, pointPos.getY() - 5, 10, 10);
-            }
-        }
-    }
-
-    private void extendCanvasLine(Vec2D point1, Vec2D point2, double margin) {
-        double dx = point1.getX() - point2.getX();
-        double dy = point1.getY() - point2.getY();
-        double norm = Math.sqrt(dx * dx + dy * dy);
-        if (!(norm < 1.0D)) {
-            double extraShift = -dy * point1.getX() + dx * point1.getY();
-            Vec2D regionTL = new Vec2D(margin, margin);
-            Vec2D regionBR = new Vec2D(mainCanvas.getWidth() - margin, mainCanvas.getHeight() - margin);
-            double righty;
-            double lefty;
-            if (Math.abs(dx) > 1 && Math.abs(dy) > 1) {
-                righty = (extraShift + dy * regionBR.getX()) / dx;
-                lefty = (extraShift + dy * regionTL.getX()) / dx;
-                double botx = (-extraShift + dx * regionBR.getY()) / dy;
-                double topx = (-extraShift + dx * regionTL.getY()) / dy;
-                point1.setX(regionTL.getX());
-                point1.setY(lefty);
-                if (lefty < regionTL.getY()) {
-                    point1.setX(topx);
-                    point1.setY(regionTL.getY());
-                }
-
-                if (lefty > regionBR.getY()) {
-                    point1.setX(botx);
-                    point1.setY(regionBR.getY());
-                }
-
-                point2.setX(regionBR.getX());
-                point2.setY(righty);
-                if (righty < regionTL.getY()) {
-                    point2.setX(topx);
-                    point2.setY(regionTL.getY());
-                }
-
-                if (righty > regionBR.getY()) {
-                    point2.setX(botx);
-                    point2.setY(regionBR.getY());
-                }
-
-                if (dx < 0) {
-                    Vec2D temp = new Vec2D(point1);
-                    point1.setX(point2.getX());
-                    point1.setY(point2.getY());
-                    point2.setX(temp.getX());
-                    point2.setY(temp.getY());
-                }
-            } else {
-                Vec2D temp;
-                if (Math.abs(dx) < 2 && Math.abs(dy) > 1) {
-                    righty = (-extraShift + dx * regionBR.getY()) / dy;
-                    lefty = (-extraShift + dx * regionTL.getY()) / dy;
-                    point1.setX(righty);
-                    point1.setY(regionBR.getY());
-                    point2.setX(lefty);
-                    point2.setY(regionTL.getY());
-                    if (dy > 0) {
-                        temp = new Vec2D(point1);
-                        point1.setX(point2.getX());
-                        point1.setY(point2.getY());
-                        point2.setX(temp.getX());
-                        point2.setY(temp.getY());
-                    }
-                } else if (Math.abs(dy) < 2 && Math.abs(dx) > 1) {
-                    righty = (extraShift + dy * regionBR.getX()) / dx;
-                    lefty = (extraShift + dy * regionTL.getX()) / dx;
-                    point1.setX(regionTL.getX());
-                    point1.setY(lefty);
-                    point2.setX(regionBR.getX());
-                    point2.setY(righty);
-                    if (dx < 0) {
-                        temp = new Vec2D(point1);
-                        point1.setX(point2.getX());
-                        point1.setY(point2.getY());
-                        point2.setX(temp.getX());
-                        point2.setY(temp.getY());
-                    }
-                }
-            }
-        }
-    }
-
-    private void drawTickLines() {
-        gc.setLineWidth(2.0);
-        HorizonSettings horizon = imageCurve.getHorizon();
-        ArrayList<TickPoint> xTickPoints = imageCurve.getXticks();
-        UUID selectedId = imageCurve.getSelectedId();
-        UUID hoveredId = imageCurve.getHoveredId(ImageElement.Type.X_TICK | ImageElement.Type.Y_TICK);
-
-        for (TickPoint xTick : xTickPoints) {
-            gc.setStroke(Color.gray(0.0));
-
-            if (currentWorkMode == MainController.WorkMode.X_TICKS ||
-                    currentWorkMode == MainController.WorkMode.Y_TICKS) {
-                if (xTick.getId().equals(selectedId)) {
-                    gc.setStroke(Color.GREEN);
-                } else if (xTick.getId().equals(hoveredId)) {
-                    if (deleteOnClick) {
-                        gc.setStroke(Color.RED);
-                    } else {
-                        gc.setStroke(Color.LAWNGREEN);
-                    }
-                }
-            }
-
-            Vec2D point1 = imageToCanvas(xTick.getPosition());
-            Vec2D point2 = new Vec2D(point1);
-            point2.setX(point1.getX() + horizon.getVerticalDirection().getX() * 100);
-            point2.setY(point1.getY() + horizon.getVerticalDirection().getY() * 100);
-
-            extendCanvasLine(point1, point2, 10.0);
-            gc.strokeLine(point1.getX(), point1.getY(), point2.getX(), point2.getY());
-        }
-
-
-        ArrayList<TickPoint> yTickPoints = imageCurve.getYticks();
-
-        for (TickPoint yTick : yTickPoints) {
-            gc.setStroke(Color.gray(0.0));
-
-            if (currentWorkMode == MainController.WorkMode.X_TICKS || currentWorkMode == MainController.WorkMode.Y_TICKS) {
-                if (yTick.getId().equals(selectedId)) {
-                    gc.setStroke(Color.GREEN);
-                } else if (yTick.getId().equals(hoveredId)) {
-                    if (deleteOnClick) {
-                        gc.setStroke(Color.RED);
-                    } else {
-                        gc.setStroke(Color.LAWNGREEN);
-                    }
-                }
-            }
-
-            Vec2D point1 = imageToCanvas(yTick.getPosition());
-            Vec2D point2 = new Vec2D(point1);
-            point2.setX(point2.getX() + horizon.getHorizontalDirection().getX() * 100);
-            point2.setY(point2.getY() + horizon.getHorizontalDirection().getY() * 100);
-            extendCanvasLine(point1, point2, 10);
-
-            gc.strokeLine(point1.getX(), point1.getY(), point2.getX(), point2.getY());
-        }
-    }
-
-    private void drawTickValues() {
-        gc.setFill(Color.gray(0.0D));
-
-        gc.setFont(new Font(16.0D));
-        ArrayList<TickPoint> xTickPoints = this.imageCurve.getXticks();
-        ArrayList<TickPoint> yTickPoints = this.imageCurve.getYticks();
-
-        for (TickPoint tick : xTickPoints) {
-            Vec2D pos = imageToCanvas(tick.getPosition());
-            gc.fillText(String.valueOf(tick.getTickValue()), pos.getX(), pos.getY());
-        }
-
-        for (TickPoint tick : yTickPoints) {
-            Vec2D pos = imageToCanvas(tick.getPosition());
-            gc.fillText(String.valueOf(tick.getTickValue()), pos.getX(), pos.getY());
-        }
-    }
-
-    private void drawHorizon() {
-        HorizonSettings horizon = imageCurve.getHorizon();
-
-        if (!horizon.isValid() || currentWorkMode != MainController.WorkMode.HORIZON) {
-            return;
-        }
-
-        gc.setLineWidth(2.0);
-        gc.setStroke(Color.gray(0.0));
-
-        Vec2D origin = imageToCanvas(horizon.getOrigin().getPosition());
-        Vec2D target = imageToCanvas(horizon.getTarget().getPosition());
-
-        gc.strokeLine(origin.getX(), origin.getY(), target.getX(), target.getY());
-        UUID selectedId = imageCurve.getSelectedId();
-        UUID hoveredId = imageCurve.getHoveredId(ImageElement.Type.HORIZON);
-
-        gc.setLineWidth(1.0D);
-        gc.setStroke(Color.gray(0.0D));
-        gc.setFill(Color.gray(0.7D));
-
-        //draw origin point
-        if (horizon.getOrigin().getId().equals(selectedId)) {
-            gc.setFill(Color.AQUAMARINE);
-        } else if (horizon.getOrigin().getId().equals(hoveredId)) {
-            gc.setFill(Color.WHITE);
-            //deleting origin will reset horizon
-            if (deleteOnClick) {
-                gc.setFill(Color.RED);
-            }
-        }
-
-        gc.fillOval(origin.getX() - 5, origin.getY() - 5, 10, 10);
-        gc.strokeOval(origin.getX() - 5, origin.getY() - 5, 10, 10);
-        gc.setFill(Color.gray(0.7));
-
-        if (horizon.getTarget().getId().equals(selectedId)) {
-            gc.setFill(Color.AQUAMARINE);
-        } else if (horizon.getTarget().getId().equals(hoveredId)) {
-            gc.setFill(Color.WHITE);
-            if (this.deleteOnClick) {
-                gc.setFill(Color.RED);
-            }
-        }
-
-        gc.fillOval(target.getX() - 5, target.getY() - 5, 10, 10);
-        gc.strokeOval(target.getX() - 5, target.getY() - 5, 10, 10);
-    }
-
-    private void drawElements() {
-        this.drawTickLines();
-        this.drawHorizon();
-        this.drawPoints();
-        this.drawTickValues();
-    }
-
+    /**
+     * Called after FXML finished loading and all properties are ready
+     */
     public void initialize() {
-        gc = mainCanvas.getCanvas().getGraphicsContext2D();
+        mainCanvas.setImageCurve(imageCurve);
 
-        mainCanvas.setOnResizeListener(() -> {
-            updateImageTransform();
-            redrawCanvas(false);
-        });
+        setupBindings();
     }
 
     public enum WorkMode {
