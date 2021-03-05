@@ -27,7 +27,8 @@ install:
 build_script:
   - cmd: gradlew jar
   #  build native image
-  - cmd: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Auxiliary/Build/vcvars64.bat" & gradlew.bat nativeBuild
+  - cmd: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Auxiliary/Build/vcvars64.bat"
+  - cmd: gradlew.bat nativeBuild
 
 artifacts:
   - path: build/libs/curvedetect.jar
