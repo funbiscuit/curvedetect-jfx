@@ -55,10 +55,8 @@ public final class CanvasPane extends Pane {
         super.layoutChildren();
         double x = snappedLeftInset();
         double y = snappedTopInset();
-        // Java 9 - snapSize is deprecated use snapSizeX() and snapSizeY() accordingly
-        // but they are not available in Java 9
-        double w = snapSize(getWidth()) - x - snappedRightInset();
-        double h = snapSize(getHeight()) - y - snappedBottomInset();
+        double w = getWidth() - x - snappedRightInset();
+        double h = getHeight() - y - snappedBottomInset();
 
         canvas.setLayoutX(x);
         canvas.setLayoutY(y);

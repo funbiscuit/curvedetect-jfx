@@ -31,7 +31,7 @@ dependencies {
 }
 
 jar {
-    archiveName("${rootProject.getName()}.${archiveExtension.get()}")
+    archiveFileName.set("${rootProject.getName()}.${archiveExtension.get()}")
     manifest {
         attributes 'Main-Class': 'com.funbiscuit.jfx.curvedetect.Launcher'
     }
