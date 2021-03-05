@@ -1,4 +1,4 @@
-version: 0.1.{build}
+version: 0.1.0.{build}
 
 image:
   - Visual Studio 2019
@@ -6,17 +6,32 @@ image:
 platform:
   - x64
 
+clone_folder: C:\projects\curvedetect
+
 environment:
   JAVA_HOME: C:\Program Files\Java\jdk11\
+  GRAALVM_HOME: C:\projects\curvedetect\graalvm
 
 init:
   - ver
   - ps: $env:Path = $env:JAVA_HOME + "bin\;" + $env:Path
   - java -version
 
+cache:
+  - .gradle -> .appveyor.yml
+  - graalvm -> ci/appveyor-install.ps1
+
+install:
+  - ./ci/appveyor-install.ps1
+
 build_script:
   - ps: ./gradlew jar
+  #  build native image
+  - ps: cmd.exe /c "`"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat`" & gradlew nativeBuild"
 
 artifacts:
   - path: build/libs/curvedetect.jar
     name: curvedetect.jar
+
+  - path: build/client/x86_64-windows/curvedetect.exe
+    name: curvedetect-x86_64.exe
