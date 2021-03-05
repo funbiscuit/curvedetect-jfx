@@ -25,9 +25,9 @@ install:
   - ps: ./ci/appveyor-install.ps1
 
 build_script:
-  - ps: ./gradlew jar
+  - cmd: gradlew jar
   #  build native image
-  - ps: cmd.exe /c "`"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat`" & gradlew nativeBuild"
+  - cmd: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat" & gradlew.bat nativeBuild
 
 artifacts:
   - path: build/libs/curvedetect.jar
