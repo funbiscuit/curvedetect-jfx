@@ -15,6 +15,7 @@ environment:
 init:
   - ver
   - ps: $env:Path = $env:JAVA_HOME + "bin\;" + $env:Path
+  - ps: $env:Path = "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Auxiliary/Build/;" + $env:Path
   - java -version
 
 cache:
@@ -27,7 +28,7 @@ install:
 build_script:
   - cmd: gradlew jar
   #  build native image
-  - cmd: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Auxiliary/Build/vcvars64.bat"
+  - cmd: vcvars64.bat
   - cmd: gradlew.bat nativeBuild
 
 artifacts:
