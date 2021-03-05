@@ -11,7 +11,7 @@ environment:
 
 init:
   - ver
-  - ps: $env:Path = "$env:JAVA_HOME;" + $env:Path
+  - ps: $env:Path = $env:JAVA_HOME + ";" + $env:Path
   - java -version
 
 build_script:
