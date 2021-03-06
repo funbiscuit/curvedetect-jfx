@@ -43,7 +43,7 @@ jobs:
           arch: x64
 
       - name: Build image
-      - run: ./gradlew nativeBuild
+        run: ./gradlew nativeBuild
 
       - name: Upload native-image
         uses: actions/upload-artifact@v2
