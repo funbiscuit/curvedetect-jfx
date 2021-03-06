@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  build-jar:
 
     runs-on: windows-latest
 
@@ -24,3 +24,25 @@ jobs:
         with:
           name: curvedetect-win.jar
           path: build/libs/curvedetect.jar
+
+  build-native:
+    name: Build native image for Windows
+
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ayltai/setup-graalvm@v1
+        with:
+          java-version: 11
+          graalvm-version: 21.0.0.2
+      - run: java -version
+      - run: echo "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/" >> $GITHUB_PATH
+      - run: vcvars64.bat
+      - run: ./gradlew nativeBuild
+
+      - name: Upload native-image
+        uses: actions/upload-artifact@v2
+        with:
+          name: curvedetect-x86_64.exe
+          path: build/client/x86_64-windows/curvedetect.exe
