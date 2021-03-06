@@ -48,6 +48,13 @@ jobs:
       - name: Build image
         run: ./gradlew nativeBuild
 
+      - name: Run UPX
+        uses: crazy-max/ghaction-upx@v1
+        with:
+          version: latest
+          file: ./build/client/x86_64-windows/curvedetect.exe
+          args: --best -fq
+
       - name: Upload native-image
         uses: actions/upload-artifact@v2
         with:
