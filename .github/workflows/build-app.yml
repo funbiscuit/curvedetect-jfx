@@ -30,6 +30,9 @@ jobs:
 
     runs-on: windows-latest
 
+    env:
+      GRAALVM_HOME: C:\hostedtoolcache\windows\GraalVM\java11-windows-amd64-21.0.0.2\x64\
+
     steps:
       - uses: actions/checkout@v2
       - uses: ayltai/setup-graalvm@v1
