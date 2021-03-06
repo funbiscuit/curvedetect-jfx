@@ -36,9 +36,13 @@ jobs:
         with:
           java-version: 11
           graalvm-version: 21.0.0.2
-      - run: java -version
-      - run: echo "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/" >> $GITHUB_PATH
-      - run: vcvars64.bat
+
+      - name: Set up Visual Studio x64 shell
+        uses: egor-tensin/vs-shell@v2
+        with:
+          arch: x64
+
+      - name: Build image
       - run: ./gradlew nativeBuild
 
       - name: Upload native-image
