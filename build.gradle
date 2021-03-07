@@ -42,13 +42,16 @@ jar {
 }
 
 gluonClient {
-    reflectionList = ['javafx.fxml.FXMLLoader',
-                      'javafx.collections.FXCollections',
-                      'javafx.scene.control.ComboBox',
-                      'javafx.scene.control.Slider',
-                      'com.funbiscuit.jfx.curvedetect.CanvasPane',
-                      'com.funbiscuit.jfx.curvedetect.MainController',
-                      'com.funbiscuit.jfx.curvedetect.TickPopupController',
+    reflectionList = [
+            'com.sun.prism.sw.SWPipeline',
+
+            'javafx.fxml.FXMLLoader',
+            'javafx.collections.FXCollections',
+            'javafx.scene.control.ComboBox',
+            'javafx.scene.control.Slider',
+            'com.funbiscuit.jfx.curvedetect.CanvasPane',
+            'com.funbiscuit.jfx.curvedetect.MainController',
+            'com.funbiscuit.jfx.curvedetect.TickPopupController',
     ]
     bundlesList = [
             // will include only bundle for default locale at build time
