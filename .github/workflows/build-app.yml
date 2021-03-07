@@ -112,6 +112,7 @@ jobs:
           path: build/client/x86_64-linux/curvedetect
 
   update-release:
+    runs-on: ubuntu-18.04
     # if: github.event_name == 'release' && github.event.action == 'created'
     needs: [build-win-jar, build-win-native, build-linux-jar, build-linux-native]
     name: Releasing
