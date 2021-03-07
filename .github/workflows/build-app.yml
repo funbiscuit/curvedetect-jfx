@@ -124,12 +124,18 @@ jobs:
         run: ls -R
         working-directory: artifacts
 
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
+      - uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: artifacts/curvedetect-linux-x86_64
+          file: artifacts/curvedetect-linux-x86_64/curvedetect
           asset_name: curvedetect-linux-x86_64
           tag: latest
           overwrite: true
           body: "Latest"
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/curvedetect-x86_64.exe/curvedetect.exe
+          asset_name: curvedetect-x86_64.exe
+          tag: latest
+          overwrite: true
