@@ -7,7 +7,8 @@ on:
     branches: [ master ]
 
 jobs:
-  build-jar:
+  build-win-jar:
+    name: Build jar for Windows
 
     runs-on: windows-latest
 
@@ -25,7 +26,7 @@ jobs:
           name: curvedetect-win.jar
           path: build/libs/curvedetect.jar
 
-  build-native:
+  build-win-native:
     name: Build native image for Windows
 
     runs-on: windows-latest
@@ -58,3 +59,51 @@ jobs:
         with:
           name: curvedetect-x86_64.exe
           path: build/client/x86_64-windows/curvedetect.exe
+
+  build-linux-jar:
+    name: Build jar for Linux
+
+    runs-on: ubuntu-18.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Build fat-jar
+        run: chmod +x gradlew && ./gradlew jar
+      - name: Upload fat-jar
+        uses: actions/upload-artifact@v2
+        with:
+          name: curvedetect-linux.jar
+          path: build/libs/curvedetect.jar
+
+  build-linux-native:
+    name: Build native image for Linux
+
+    runs-on: ubuntu-18.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: funbiscuit/setup-graalvm@v1
+        with:
+          java-version: 11
+          graalvm-version: 21.0.0.2
+          native-image: false
+
+      - name: Build image
+        run: chmod +x gradlew && ./gradlew nativeBuild
+
+      - name: Run UPX
+        uses: crazy-max/ghaction-upx@v1
+        with:
+          version: latest
+          file: ./build/client/x86_64-linux/curvedetect
+          args: --best -fq
+
+      - name: Upload native-image
+        uses: actions/upload-artifact@v2
+        with:
+          name: curvedetect-linux-x86_64
+          path: build/client/x86_64-linux/curvedetect
