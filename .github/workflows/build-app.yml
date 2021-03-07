@@ -30,15 +30,13 @@ jobs:
 
     runs-on: windows-latest
 
-    env:
-      GRAALVM_HOME: C:\hostedtoolcache\windows\GraalVM\java11-windows-amd64-21.0.0.2\x64\
-
     steps:
       - uses: actions/checkout@v2
-      - uses: ayltai/setup-graalvm@v1
+      - uses: funbiscuit/setup-graalvm@v1
         with:
           java-version: 11
           graalvm-version: 21.0.0.2
+          native-image: false
 
       - name: Set up Visual Studio x64 shell
         uses: egor-tensin/vs-shell@v2
