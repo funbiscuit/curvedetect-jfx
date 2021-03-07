@@ -93,7 +93,7 @@ jobs:
           native-image: false
 
       - name: Install libraries
-        run: sudo apt-get -y install libgl-dev libgtk-3-dev libpango1.0-dev libxtst-dev
+        run: sudo apt install libasound2-dev libavcodec-dev libavformat-dev libavutil-dev libgl-dev libgtk-3-dev libpango1.0-dev libxtst-dev
 
       - name: Build image
         run: chmod +x gradlew && ./gradlew nativeBuild
