@@ -42,10 +42,8 @@ jar {
 }
 
 gluonClient {
+    enableSwRendering = true
     reflectionList = [
-            // doesn't help since native libs for SW rendering are not included
-            'com.sun.prism.sw.SWPipeline',
-
             'javafx.fxml.FXMLLoader',
             'javafx.collections.FXCollections',
             'javafx.scene.control.ComboBox',
