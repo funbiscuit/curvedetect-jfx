@@ -110,3 +110,25 @@ jobs:
         with:
           name: curvedetect-linux-x86_64
           path: build/client/x86_64-linux/curvedetect
+
+  update-release:
+    # if: github.event_name == 'release' && github.event.action == 'created'
+    needs: [build-win-jar, build-win-native, build-linux-jar, build-linux-native]
+    name: Releasing
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+      - name: Display structure of downloaded files
+        run: ls -R
+        working-directory: artifacts
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/curvedetect-linux-x86_64
+          asset_name: curvedetect-linux-x86_64
+          tag: latest
+          overwrite: true
+          body: "Latest"
