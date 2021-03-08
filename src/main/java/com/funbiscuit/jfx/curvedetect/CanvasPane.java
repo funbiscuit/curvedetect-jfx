@@ -16,29 +16,24 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public final class CanvasPane extends Pane {
 
     private final Canvas canvas = new Canvas(100.0d, 100.0d);
-
+    @Getter
+    private final ObjectProperty<MainController.WorkMode> workMode = new SimpleObjectProperty<>();
+    @Getter
+    BooleanProperty deleteMode = new SimpleBooleanProperty(false);
     private GraphicsContext gc;
-
     @Setter
     private ImageCurve imageCurve;
-    //private ImageWrapper image;
-
     //with this parameters image will be fit to canvas and centered
     private double defaultImageScale = 1;
     private double currentImageScale = 1;
     private Vec2D defaultImageOffset = new Vec2D(0, 0);
     private Vec2D currentImageOffset = new Vec2D(0, 0);
-
-    @Getter
-    BooleanProperty deleteMode = new SimpleBooleanProperty(false);
-    @Getter
-    private final ObjectProperty<MainController.WorkMode> workMode = new SimpleObjectProperty<>();
-
     @Setter
     private boolean drawSubdivisionMarkers = true;
     @Setter
@@ -253,18 +248,24 @@ public final class CanvasPane extends Pane {
     private void drawTickLines() {
         gc.setLineWidth(2.0);
         HorizonSettings horizon = imageCurve.getHorizon();
-        ArrayList<TickPoint> xTickPoints = imageCurve.getXticks();
+        List<TickPoint> xTickPoints = imageCurve.getXticks();
+        List<TickPoint> allTicks = new ArrayList<>(xTickPoints);
+        allTicks.addAll(imageCurve.getYticks());
+
         UUID selectedId = imageCurve.getSelectedId();
         UUID hoveredId = imageCurve.getHoveredId(ImageElement.Type.X_TICK | ImageElement.Type.Y_TICK);
 
-        for (TickPoint xTick : xTickPoints) {
+        boolean ticksActive = workMode.get() == MainController.WorkMode.X_TICKS ||
+                workMode.get() == MainController.WorkMode.Y_TICKS;
+
+        for (int i = 0; i < allTicks.size(); i++) {
+            TickPoint tick = allTicks.get(i);
             gc.setStroke(Color.gray(0.0));
 
-            if (workMode.get() == MainController.WorkMode.X_TICKS ||
-                    workMode.get() == MainController.WorkMode.Y_TICKS) {
-                if (xTick.getId().equals(selectedId)) {
+            if (ticksActive) {
+                if (tick.getId().equals(selectedId)) {
                     gc.setStroke(Color.GREEN);
-                } else if (xTick.getId().equals(hoveredId)) {
+                } else if (tick.getId().equals(hoveredId)) {
                     if (deleteMode.get()) {
                         gc.setStroke(Color.RED);
                     } else {
@@ -273,39 +274,17 @@ public final class CanvasPane extends Pane {
                 }
             }
 
-            Vec2D point1 = imageToCanvas(xTick.getPosition());
+            Vec2D point1 = imageToCanvas(tick.getPosition());
             Vec2D point2 = new Vec2D(point1);
-            point2.setX(point1.getX() + horizon.getVerticalDirection().getX() * 100);
-            point2.setY(point1.getY() + horizon.getVerticalDirection().getY() * 100);
+            if (i < xTickPoints.size()) {
+                point2.setX(point1.getX() + horizon.getVerticalDirection().getX() * 100);
+                point2.setY(point1.getY() + horizon.getVerticalDirection().getY() * 100);
+            } else {
+                point2.setX(point1.getX() + horizon.getHorizontalDirection().getX() * 100);
+                point2.setY(point1.getY() + horizon.getHorizontalDirection().getY() * 100);
+            }
 
             extendCanvasLine(point1, point2, 10.0);
-            gc.strokeLine(point1.getX(), point1.getY(), point2.getX(), point2.getY());
-        }
-
-
-        ArrayList<TickPoint> yTickPoints = imageCurve.getYticks();
-
-        for (TickPoint yTick : yTickPoints) {
-            gc.setStroke(Color.gray(0.0));
-
-            if (workMode.get() == MainController.WorkMode.X_TICKS || workMode.get() == MainController.WorkMode.Y_TICKS) {
-                if (yTick.getId().equals(selectedId)) {
-                    gc.setStroke(Color.GREEN);
-                } else if (yTick.getId().equals(hoveredId)) {
-                    if (deleteMode.get()) {
-                        gc.setStroke(Color.RED);
-                    } else {
-                        gc.setStroke(Color.LAWNGREEN);
-                    }
-                }
-            }
-
-            Vec2D point1 = imageToCanvas(yTick.getPosition());
-            Vec2D point2 = new Vec2D(point1);
-            point2.setX(point2.getX() + horizon.getHorizontalDirection().getX() * 100);
-            point2.setY(point2.getY() + horizon.getHorizontalDirection().getY() * 100);
-            extendCanvasLine(point1, point2, 10);
-
             gc.strokeLine(point1.getX(), point1.getY(), point2.getX(), point2.getY());
         }
     }
