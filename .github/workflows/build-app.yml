@@ -128,15 +128,28 @@ jobs:
       - uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: artifacts/curvedetect-linux-x86_64/curvedetect
-          asset_name: curvedetect-linux-x86_64
+          file: artifacts/curvedetect-win.jar/curvedetect.jar
           tag: latest
+          asset_name: curvedetect-win.jar
           overwrite: true
-          body: "Latest"
       - uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: artifacts/curvedetect-x86_64.exe/curvedetect.exe
-          asset_name: curvedetect-x86_64.exe
           tag: latest
+          asset_name: curvedetect-x86_64.exe
+          overwrite: true
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/curvedetect-linux.jar/curvedetect.jar
+          tag: latest
+          asset_name: curvedetect-linux.jar
+          overwrite: true
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/curvedetect-linux-x86_64/curvedetect
+          tag: latest
+          asset_name: curvedetect-linux-x86_64
           overwrite: true
