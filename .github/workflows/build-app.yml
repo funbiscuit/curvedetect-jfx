@@ -111,11 +111,59 @@ jobs:
           name: curvedetect-linux-x86_64
           path: build/client/x86_64-linux/curvedetect
 
+  build-macos-jar:
+    name: Build jar for MacOS
+
+    runs-on: macos-10.15
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Build fat-jar
+        run: chmod +x gradlew && ./gradlew jar
+      - name: Upload fat-jar
+        uses: actions/upload-artifact@v2
+        with:
+          name: curvedetect-macos.jar
+          path: build/libs/curvedetect.jar
+
+  build-macos-native:
+    name: Build native image for MacOS
+
+    runs-on: macos-10.15
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: funbiscuit/setup-graalvm@v1
+        with:
+          java-version: 11
+          graalvm-version: 21.0.0.2
+          native-image: false
+
+      - name: Build image
+        run: chmod +x gradlew && ./gradlew nativeBuild
+
+      - name: Run UPX
+        uses: crazy-max/ghaction-upx@v1
+        with:
+          version: latest
+          file: ./build/client/x86_64-darwin/curvedetect
+          args: --best -fq
+
+      - name: Upload native-image
+        uses: actions/upload-artifact@v2
+        with:
+          name: curvedetect-macos-x86_64
+          path: build/client/x86_64-darwin/curvedetect
+
   update-release:
     runs-on: ubuntu-18.04
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     # if: github.event_name == 'release' && github.event.action == 'created'
-    needs: [build-win-jar, build-win-native, build-linux-jar, build-linux-native]
+    needs: [build-win-jar, build-win-native, build-linux-jar, build-linux-native, build-macos-jar, build-macos-native]
     name: Releasing
     steps:
       - uses: actions/download-artifact@v2
@@ -152,4 +200,18 @@ jobs:
           file: artifacts/curvedetect-linux-x86_64/curvedetect
           tag: latest
           asset_name: curvedetect-linux-x86_64
+          overwrite: true
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/curvedetect-macos.jar/curvedetect.jar
+          tag: latest
+          asset_name: curvedetect-macos.jar
+          overwrite: true
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/curvedetect-macos-x86_64/curvedetect
+          tag: latest
+          asset_name: curvedetect-macos-x86_64
           overwrite: true
