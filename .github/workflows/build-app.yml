@@ -152,8 +152,8 @@ jobs:
       - name: Upload native-image
         uses: actions/upload-artifact@v2
         with:
-          name: curvedetect-macos-x86_64
-          path: curvedetect
+          name: curvedetect-macos-x86_64.zip
+          path: build/client/x86_64-darwin/curvedetect.zip
 
   update-release:
     runs-on: ubuntu-18.04
@@ -207,7 +207,7 @@ jobs:
       - uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: artifacts/curvedetect-macos-x86_64/curvedetect
+          file: artifacts/curvedetect-macos-x86_64.zip/curvedetect.zip
           tag: latest
-          asset_name: curvedetect-macos-x86_64
+          asset_name: curvedetect-macos-x86_64.zip
           overwrite: true
