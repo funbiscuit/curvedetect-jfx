@@ -146,18 +146,14 @@ jobs:
       - name: Build image
         run: chmod +x gradlew && ./gradlew nativeBuild
 
-      - name: Run UPX
-        uses: crazy-max/ghaction-upx@v1
-        with:
-          version: latest
-          file: ./build/client/x86_64-darwin/curvedetect
-          args: --best -fq
+      - name: Add image to archive
+        run: cd ./build/client/x86_64-darwin && zip curvedetect.zip curvedetect
 
       - name: Upload native-image
         uses: actions/upload-artifact@v2
         with:
           name: curvedetect-macos-x86_64
-          path: build/client/x86_64-darwin/curvedetect
+          path: curvedetect
 
   update-release:
     runs-on: ubuntu-18.04
