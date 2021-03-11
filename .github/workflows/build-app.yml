@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: funbiscuit/setup-graalvm@v1
+      - uses: ayltai/setup-graalvm@v1
         with:
           java-version: 11
           graalvm-version: 21.0.0.2
@@ -86,7 +86,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: funbiscuit/setup-graalvm@v1
+      - uses: ayltai/setup-graalvm@v1
         with:
           java-version: 11
           graalvm-version: 21.0.0.2
@@ -137,7 +137,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: funbiscuit/setup-graalvm@v1
+      - uses: ayltai/setup-graalvm@v1
         with:
           java-version: 11
           graalvm-version: 21.0.0.2
