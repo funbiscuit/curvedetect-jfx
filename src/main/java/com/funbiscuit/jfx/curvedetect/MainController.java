@@ -342,20 +342,21 @@ public class MainController {
 
     private void handleTickInput() {
 
+        //TODO
         if (tickPopupController.getWasCanceled()) {
             imageCurve.resetSelectedTick();
         } else {
             if (tickPopupController.getDeleteTick()) {
-                imageCurve.deleteSelectedTick();
+//                imageCurve.deleteSelectedTick();
             } else {
                 imageCurve.makeTickInput(tickPopupController.getTickValue());
             }
         }
 
         if (imageCurve.isXgridReady() && !imageCurve.isYgridReady()) {
-            workMode.set(WorkMode.Y_TICKS);
+            workMode.set(WorkMode.TICK_GRID);
         } else if (imageCurve.isYgridReady() && !imageCurve.isXgridReady()) {
-            workMode.set(WorkMode.X_TICKS);
+            workMode.set(WorkMode.TICK_GRID);
         }
 
         ctrlPressed = false;
@@ -366,22 +367,23 @@ public class MainController {
     }
 
     private void showTickInput() {
-        TickPoint selected = imageCurve.getSelectedTick();
-
-        if (selected == null) {
-            mainCanvas.redrawCanvas(false);
-            return;
-        }
-
-        tickPopupController.setTickValue(selected.getTickValue(), selected.isNew());
-
-        if(tickDialog.getOwner() == null)
-            tickDialog.initOwner(window.get());
-
-        tickDialog.show();
-        Window stage = window.get();
-        tickDialog.setX(stage.getX() + stage.getWidth() * 0.5 - tickDialog.getWidth() * 0.5);
-        tickDialog.setY(stage.getY() + stage.getHeight() * 0.5 - tickDialog.getHeight() * 0.5);
+        //TODO
+//        TickPoint selected = imageCurve.getSelectedTick();
+//
+//        if (selected == null) {
+//            mainCanvas.redrawCanvas(false);
+//            return;
+//        }
+//
+//        tickPopupController.setTickValue(selected.getTickValue(), selected.isNew());
+//
+//        if(tickDialog.getOwner() == null)
+//            tickDialog.initOwner(window.get());
+//
+//        tickDialog.show();
+//        Window stage = window.get();
+//        tickDialog.setX(stage.getX() + stage.getWidth() * 0.5 - tickDialog.getWidth() * 0.5);
+//        tickDialog.setY(stage.getY() + stage.getHeight() * 0.5 - tickDialog.getHeight() * 0.5);
     }
 
     private void createWindowEventHandlers() {
@@ -497,8 +499,7 @@ public class MainController {
         if (button == MouseButton.PRIMARY) {
             switch (workMode.get()) {
                 case POINTS:
-                case X_TICKS:
-                case Y_TICKS:
+                case TICK_GRID:
                 case HORIZON:
                     Vec2D imagePos = mainCanvas.canvasToImage(mousePosition);
                     imageCurve.dragSelected(imagePos.getX(), imagePos.getY());
@@ -541,23 +542,14 @@ public class MainController {
                             imageCurve.dragSelected(imagePos.getX(), imagePos.getY());
                         }
                         break;
-                    case X_TICKS:
+                    case TICK_GRID:
                         if (ctrlPressed) {
-                            imageCurve.addXtick(imagePos.getX(), imagePos.getY());
-                        } else if (imageCurve.selectHovered(ImageElement.Type.X_TICK | ImageElement.Type.Y_TICK)) {
+                            //imageCurve.addXtick(imagePos.getX(), imagePos.getY());
+                        } else if (imageCurve.selectHovered(ImageElement.Type.TICK_GRID)) {
                             imageCurve.backupSelectedTick();
 
 //                            selectedXtick?.x=e.x
 //                            selectedXtick?.y=e.y
-                        }
-                        break;
-                    case Y_TICKS:
-                        if (ctrlPressed) {
-                            imageCurve.addYtick(imagePos.getX(), imagePos.getY());
-                        } else if (imageCurve.selectHovered(ImageElement.Type.X_TICK | ImageElement.Type.Y_TICK)) {
-                            imageCurve.backupSelectedTick();
-//                            selectedYtick?.x=e.x
-//                            selectedYtick?.y=e.y
                         }
                         break;
                     case HORIZON:
@@ -588,8 +580,7 @@ public class MainController {
     private void showContextMenu(double x, double y) {
         openImageItem.setVisible(image == null);
         pointsItem.setDisable(image == null || workMode.get() == MainController.WorkMode.POINTS);
-        itemGrid.setDisable(image == null || workMode.get() == MainController.WorkMode.X_TICKS ||
-                workMode.get() == MainController.WorkMode.Y_TICKS);
+        itemGrid.setDisable(image == null || workMode.get() == MainController.WorkMode.TICK_GRID);
         horizonItem.setDisable(image == null || workMode.get() == MainController.WorkMode.HORIZON);
 
 
@@ -600,13 +591,13 @@ public class MainController {
         if (e.getButton() == MouseButton.PRIMARY) {
 //            updateHoveredElement(e.x,e.y)
             switch (workMode.get()) {
-                case X_TICKS:
-                case Y_TICKS:
-                    if (deleteMode.get()) {
-                        imageCurve.deleteSelected();
-                    } else if (imageCurve.getSelectedTick() != null) {
-                        showTickInput();
-                    }
+                case TICK_GRID:
+                    imageCurve.deselectAll();
+//                    if (deleteMode.get()) {
+//                        imageCurve.deleteSelected();
+//                    } else if (imageCurve.getSelectedTick() != null) {
+//                        showTickInput();
+//                    }
                     break;
                 case POINTS:
                 case HORIZON:
@@ -716,8 +707,7 @@ public class MainController {
             updateControls();
         }));
         itemGrid.setOnAction((it -> {
-            workMode.set(imageCurve.isXgridReady() && !imageCurve.isYgridReady() ?
-                    WorkMode.Y_TICKS : WorkMode.X_TICKS);
+            workMode.set(WorkMode.TICK_GRID);
             updateControls();
         }));
         decimalSeparatorComboBox.getItems().addAll(
@@ -733,8 +723,7 @@ public class MainController {
     public enum WorkMode {
         NONE,
         POINTS,
-        X_TICKS,
-        Y_TICKS,
+        TICK_GRID,
         HORIZON;
     }
 }

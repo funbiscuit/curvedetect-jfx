@@ -5,22 +5,25 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 
 public class ImageCurve {
     private final ArrayList<Point> allPoints;
     private final ArrayList<Point> userPoints;
-    private final ArrayList<TickPoint> xTickPoints;
-    private final ArrayList<TickPoint> yTickPoints;
+    //    private final ArrayList<TickPoint> xTickPoints;
+//    private final ArrayList<TickPoint> yTickPoints;
     private final HorizonSettings horizonSettings;
     private final double hoverZone = 14.0;
+    private TickGrid tickGrid;
     private Point hoveredPoint;
     private Point selectedPoint;
-    private TickPoint hoveredXtick;
-    private TickPoint selectedXtick;
-    private TickPoint hoveredYtick;
-    private TickPoint selectedYtick;
+    //    private TickPoint hoveredXtick;
+//    private TickPoint selectedXtick;
+//    private TickPoint hoveredYtick;
+//    private TickPoint selectedYtick;
     private HorizonSettings.HorizonPoint hoveredOrigin;
     private HorizonSettings.HorizonPoint selectedOrigin;
 
@@ -36,8 +39,9 @@ public class ImageCurve {
         subdivideIterations = 3;
         allPoints = new ArrayList<>();
         userPoints = new ArrayList<>();
-        xTickPoints = new ArrayList<>();
-        yTickPoints = new ArrayList<>();
+        tickGrid = new TickGrid();
+//        xTickPoints = new ArrayList<>();
+//        yTickPoints = new ArrayList<>();
         horizonSettings = new HorizonSettings(0.0D, 0.0D);
     }
 
@@ -51,10 +55,10 @@ public class ImageCurve {
     private ImagePoint getSelectedImagePoint() {
         if (selectedPoint != null)
             return selectedPoint;
-        if (selectedXtick != null)
-            return selectedXtick.getImagePoint();
-        if (selectedYtick != null)
-            return selectedYtick.getImagePoint();
+//        if (selectedXtick != null)
+//            return selectedXtick.getImagePoint();
+//        if (selectedYtick != null)
+//            return selectedYtick.getImagePoint();
         if (selectedOrigin == HorizonSettings.HorizonPoint.ORIGIN)
             return horizonSettings.getOrigin();
         if (selectedOrigin == HorizonSettings.HorizonPoint.TARGET)
@@ -65,10 +69,10 @@ public class ImageCurve {
     public UUID getHoveredId(int type) {
         if ((type & ImageElement.Type.POINT) != 0 && hoveredPoint != null)
             return hoveredPoint.getId();
-        if ((type & ImageElement.Type.X_TICK) != 0 && hoveredXtick != null)
-            return hoveredXtick.getId();
-        if ((type & ImageElement.Type.Y_TICK) != 0 && hoveredYtick != null)
-            return hoveredYtick.getId();
+//        if ((type & ImageElement.Type.X_TICK) != 0 && hoveredXtick != null)
+//            return hoveredXtick.getId();
+//        if ((type & ImageElement.Type.Y_TICK) != 0 && hoveredYtick != null)
+//            return hoveredYtick.getId();
         if ((type & ImageElement.Type.HORIZON) != 0 && hoveredOrigin != null) {
             if (hoveredOrigin == HorizonSettings.HorizonPoint.ORIGIN)
                 return horizonSettings.getOrigin().getId();
@@ -80,13 +84,13 @@ public class ImageCurve {
     }
 
 
-    public TickPoint getSelectedTick() {
-        TickPoint var10000 = this.selectedXtick;
-        if (var10000 == null) {
-            var10000 = this.selectedYtick;
-        }
+    public Optional<TickGrid.Tick> getSelectedTick() {
+//        TickPoint var10000 = this.selectedXtick;
+//        if (var10000 == null) {
+//            var10000 = this.selectedYtick;
+//        }
 
-        return var10000;
+        return tickGrid.getSelectedTick();
     }
 
     public void addPoint(double x, double y) {
@@ -97,50 +101,58 @@ public class ImageCurve {
         sortPoints();
     }
 
-    public void addXtick(double x, double y) {
-        selectedXtick = new TickPoint(x, y);
-        selectedXtick.setNew(true);
+//    public void addXtick(double x, double y) {
+//        selectedXtick = new TickPoint(x, y);
+//        selectedXtick.setNew(true);
+//
+//
+//        xTickPoints.add(selectedXtick);
+//        if (xTickPoints.size() > 2) {
+//            xTickPoints.remove(0);
+//        }
+//
+//        snapSelected();
+//    }
 
-
-        xTickPoints.add(selectedXtick);
-        if (xTickPoints.size() > 2) {
-            xTickPoints.remove(0);
-        }
-
-        snapSelected();
-    }
-
-    public void addYtick(double x, double y) {
-        this.selectedYtick = new TickPoint(x, y);
-        selectedYtick.setNew(true);
-
-
-        yTickPoints.add(selectedYtick);
-        if (yTickPoints.size() > 2) {
-            yTickPoints.remove(0);
-        }
-
-        snapSelected();
-    }
+//    public void addYtick(double x, double y) {
+//        this.selectedYtick = new TickPoint(x, y);
+//        selectedYtick.setNew(true);
+//
+//
+//        yTickPoints.add(selectedYtick);
+//        if (yTickPoints.size() > 2) {
+//            yTickPoints.remove(0);
+//        }
+//
+//        snapSelected();
+//    }
 
     public void dragSelected(double newX, double newY) {
-        ImagePoint selected = getSelectedImagePoint();
-        if (selected != null) {
-            selected.setImagePos(newX, newY);
+        if (tickGrid.isSelected()) {
+            tickGrid.dragSelected(new Vec2D(newX, newY));
+        } else {
+            ImagePoint selected = getSelectedImagePoint();
+            if (selected != null) {
+                selected.setImagePos(newX, newY);
+            }
         }
     }
 
     public void snapSelected() {
         ImagePoint selected = getSelectedImagePoint();
         if (selected != null && image != null) {
-            selected.setSnapped(image.snap(selected));
+            selected.snap(image);
+        } else {
+            tickGrid.snapSelected(image);
         }
     }
 
     public void unsnapSelected(double newX, double newY) {
         ImagePoint selected = getSelectedImagePoint();
         if (selected != null) {
-            selected.setImagePos(newX, newY);
+            selected.unsnap(newX, newY);
+        } else {
+            tickGrid.unsnapSelected(newX, newY);
         }
     }
 
@@ -202,12 +214,12 @@ public class ImageCurve {
                     continue;
 
                 nextLeft.setImagePos(leftPointPos.getX() + (rightPointPos.getX() - leftPointPos.getX()) * (1.0D / (double) (rightIndex - leftIndex)), leftPointPos.getY() + (rightPointPos.getY() - leftPointPos.getY()) * (1.0D / (double) (rightIndex - leftIndex)));
-                nextLeft.setSnapped(image.snap(nextLeft));
+                nextLeft.snap(image);
                 nextLeft.setSubdivisionPoint(true);
 
                 if (j != extraPointsHalf) {
                     nextRight.setImagePos(rightPointPos.getX() - (rightPointPos.getX() - leftPointPos.getX()) * (1.0D / (double) (rightIndex - leftIndex)), rightPointPos.getY() - (rightPointPos.getY() - leftPointPos.getY()) * (1.0D / (double) (rightIndex - leftIndex)));
-                    nextRight.setSnapped(image.snap(nextRight));
+                    nextRight.snap(image);
                     nextRight.setSubdivisionPoint(true);
                 }
 
@@ -227,26 +239,28 @@ public class ImageCurve {
         double mDx = -dir.getX();
         int gridInvertion = 1;
 
-        if (xTickPoints.size() > 1) {
-            TickPoint left;
-            TickPoint right;
+        //TODO
 
-            if (xTickPoints.get(0).getTickValue() < xTickPoints.get(1).getTickValue()) {
-                left = xTickPoints.get(0);
-                right = xTickPoints.get(1);
-            } else {
-                left = xTickPoints.get(1);
-                right = xTickPoints.get(0);
-            }
-
-            Vec2D p1image = left.getPosition();
-            Vec2D p2image = right.getPosition();
-            double p1Projection = -mDx * (p1image.getX() - origin.getX()) + dy * (p1image.getY() - origin.getY());
-            double p2Projection = -mDx * (p2image.getX() - origin.getX()) + dy * (p2image.getY() - origin.getY());
-            if (p1Projection > p2Projection) {
-                gridInvertion = -1;
-            }
-        }
+//        if (xTickPoints.size() > 1) {
+//            TickPoint left;
+//            TickPoint right;
+//
+//            if (xTickPoints.get(0).getTickValue() < xTickPoints.get(1).getTickValue()) {
+//                left = xTickPoints.get(0);
+//                right = xTickPoints.get(1);
+//            } else {
+//                left = xTickPoints.get(1);
+//                right = xTickPoints.get(0);
+//            }
+//
+//            Vec2D p1image = left.getPosition();
+//            Vec2D p2image = right.getPosition();
+//            double p1Projection = -mDx * (p1image.getX() - origin.getX()) + dy * (p1image.getY() - origin.getY());
+//            double p2Projection = -mDx * (p2image.getX() - origin.getX()) + dy * (p2image.getY() - origin.getY());
+//            if (p1Projection > p2Projection) {
+//                gridInvertion = -1;
+//            }
+//        }
 
         int gridInv = gridInvertion;
 
@@ -262,34 +276,35 @@ public class ImageCurve {
 
     public void resetSelectedTick() {
         //cancel all changes that were made to selected tick since it was selected
-        TickPoint selected = selectedXtick;
-        if (selected == null) {
-            selected = selectedYtick;
-        }
-
-        if (selected != null) {
-            selected.setNew(false);
-            selected.restoreBackup();
-        }
-
-        selectedXtick = null;
-        selectedYtick = null;
+        //TODO
+//        TickPoint selected = selectedXtick;
+//        if (selected == null) {
+//            selected = selectedYtick;
+//        }
+//
+//        if (selected != null) {
+//            selected.setNew(false);
+//            selected.restoreBackup();
+//        }
+//
+//        selectedXtick = null;
+//        selectedYtick = null;
     }
 
-    public void deleteSelectedTick() {
-        TickPoint selected = this.selectedXtick;
-        if (selected == null) {
-            selected = this.selectedYtick;
-        }
-
-        if (selected != null) {
-            xTickPoints.remove(selected);
-            yTickPoints.remove(selected);
-        }
-
-        selectedXtick = null;
-        selectedYtick = null;
-    }
+//    public void deleteSelectedTick() {
+//        TickPoint selected = this.selectedXtick;
+//        if (selected == null) {
+//            selected = this.selectedYtick;
+//        }
+//
+//        if (selected != null) {
+//            xTickPoints.remove(selected);
+//            yTickPoints.remove(selected);
+//        }
+//
+//        selectedXtick = null;
+//        selectedYtick = null;
+//    }
 
     private void updateHoveredPoint(double x, double y) {
         double minDist = hoverZone * hoverZone;
@@ -307,36 +322,40 @@ public class ImageCurve {
         }
     }
 
-    private void updateHoveredXtick(double x, double y) {
-        double minDist = hoverZone;
-        hoveredXtick = null;
-
-        Vec2D tickDirection = horizonSettings.getVerticalDirection();
-        Point point = new Point(x, y);
-
-        for (TickPoint xTick : xTickPoints) {
-            double dist = xTick.distanceTo(point.getPosition(), tickDirection);
-            if (dist < minDist) {
-                minDist = dist;
-                hoveredXtick = xTick;
-            }
-        }
+    private void updateHoveredTick(double x, double y) {
+        tickGrid.updateHovered(new Vec2D(x, y));
     }
 
-    private void updateHoveredYtick(double x, double y) {
-        double minDist = hoverZone;
-        hoveredYtick = null;
-        Vec2D tickDirection = horizonSettings.getHorizontalDirection();
-        Vec2D point = new Vec2D(x, y);
+//    private void updateHoveredXtick(double x, double y) {
+//        double minDist = hoverZone;
+//        hoveredXtick = null;
+//
+//        Vec2D tickDirection = horizonSettings.getVerticalDirection();
+//        Point point = new Point(x, y);
+//
+//        for (TickPoint xTick : xTickPoints) {
+//            double dist = xTick.distanceTo(point.getPosition(), tickDirection);
+//            if (dist < minDist) {
+//                minDist = dist;
+//                hoveredXtick = xTick;
+//            }
+//        }
+//    }
 
-        for (TickPoint yTick : yTickPoints) {
-            double dist = yTick.distanceTo(point, tickDirection);
-            if (dist < minDist) {
-                minDist = dist;
-                hoveredYtick = yTick;
-            }
-        }
-    }
+//    private void updateHoveredYtick(double x, double y) {
+//        double minDist = hoverZone;
+//        hoveredYtick = null;
+//        Vec2D tickDirection = horizonSettings.getHorizontalDirection();
+//        Vec2D point = new Vec2D(x, y);
+//
+//        for (TickPoint yTick : yTickPoints) {
+//            double dist = yTick.distanceTo(point, tickDirection);
+//            if (dist < minDist) {
+//                minDist = dist;
+//                hoveredYtick = yTick;
+//            }
+//        }
+//    }
 
     private void updateHoveredHorizon(double x, double y) {
         hoveredOrigin = HorizonSettings.HorizonPoint.NONE;
@@ -364,17 +383,19 @@ public class ImageCurve {
     }
 
     public void backupSelectedTick() {
-        TickPoint selectedTick = getSelectedTick();
-        if (selectedTick != null) {
-            selectedTick.makeBackup();
-        }
+        //TODO
+//        TickPoint selectedTick = getSelectedTick();
+//        if (selectedTick != null) {
+//            selectedTick.makeBackup();
+//        }
     }
 
     public void deselectAll() {
         selectedPoint = null;
         selectedOrigin = HorizonSettings.HorizonPoint.NONE;
-        selectedXtick = null;
-        selectedYtick = null;
+        tickGrid.deselect();
+//        selectedXtick = null;
+//        selectedYtick = null;
     }
 
     public void deleteSelected() {
@@ -383,19 +404,10 @@ public class ImageCurve {
             selectedPoint = null;
             hoveredPoint = null;
             sortPoints();
-        } else {
-            if (selectedXtick != null) {
-                xTickPoints.remove(selectedXtick);
-                hoveredXtick = null;
-                selectedXtick = null;
-            } else if (selectedYtick != null) {
-                yTickPoints.remove(selectedYtick);
-                hoveredYtick = null;
-                selectedYtick = null;
-            } else if (selectedOrigin != HorizonSettings.HorizonPoint.NONE) {
+        } else if (selectedOrigin != HorizonSettings.HorizonPoint.NONE) {
                 resetHorizon();
             }
-        }
+
     }
 
     public void setSubdivision(int value) {
@@ -413,17 +425,15 @@ public class ImageCurve {
         selectedOrigin = HorizonSettings.HorizonPoint.NONE;
         hoveredOrigin = HorizonSettings.HorizonPoint.NONE;
         horizonSettings.setValid(true);
+        tickGrid.resetToBox(image.getSize(), 10);
     }
 
     public void resetPoints() {
         allPoints.clear();
         userPoints.clear();
-        xTickPoints.clear();
-        yTickPoints.clear();
+        tickGrid = new TickGrid();
         horizonSettings.setValid(false);
         selectedOrigin = HorizonSettings.HorizonPoint.NONE;
-        selectedYtick = null;
-        selectedXtick = null;
         selectedPoint = null;
         hoveredPoint = null;
     }
@@ -433,12 +443,15 @@ public class ImageCurve {
         if ((type & ImageElement.Type.POINT) != 0 && hoveredPoint != null) {
             deselectAll();
             selectedPoint = hoveredPoint;
-        } else if ((type & ImageElement.Type.X_TICK) != 0 && hoveredXtick != null) {
+        } else if ((type & ImageElement.Type.TICK_GRID) != 0 && tickGrid.isHovered()) {
             deselectAll();
-            selectedXtick = hoveredXtick;
-        } else if ((type & ImageElement.Type.Y_TICK) != 0 && hoveredYtick != null) {
-            deselectAll();
-            selectedYtick = hoveredYtick;
+            tickGrid.selectHovered();
+//        }  else if ((type & ImageElement.Type.X_TICK) != 0 && hoveredXtick != null) {
+//            deselectAll();
+//            selectedXtick = hoveredXtick;
+//        } else if ((type & ImageElement.Type.Y_TICK) != 0 && hoveredYtick != null) {
+//            deselectAll();
+//            selectedYtick = hoveredYtick;
         } else if ((type & ImageElement.Type.HORIZON) != 0 && hoveredOrigin != HorizonSettings.HorizonPoint.NONE) {
             deselectAll();
             selectedOrigin = hoveredOrigin;
@@ -457,39 +470,43 @@ public class ImageCurve {
         if ((type & ImageElement.Type.POINT) != 0)
             updateHoveredPoint(x, y);
 
-        if ((type & ImageElement.Type.X_TICK) != 0)
-            updateHoveredXtick(x, y);
+        if ((type & ImageElement.Type.TICK_GRID) != 0)
+            tickGrid.updateHovered(new Vec2D(x, y));
 
-        if ((type & ImageElement.Type.Y_TICK) != 0)
-            updateHoveredYtick(x, y);
+//        if ((type & ImageElement.Type.X_TICK) != 0)
+//            updateHoveredXtick(x, y);
+//
+//        if ((type & ImageElement.Type.Y_TICK) != 0)
+//            updateHoveredYtick(x, y);
 
         if ((type & ImageElement.Type.HORIZON) != 0)
             updateHoveredHorizon(x, y);
     }
 
     public void makeTickInput(double newValue) {
-        TickPoint selected = selectedXtick;
-        if (selected == null) {
-            selected = selectedYtick;
-        }
-
-        if (selected != null) {
-            selected.setNew(false);
-            selected.setTickValue(newValue);
-        }
-
-        selectedXtick = null;
-        selectedYtick = null;
+        //TODO
+//        TickPoint selected = selectedXtick;
+//        if (selected == null) {
+//            selected = selectedYtick;
+//        }
+//
+//        if (selected != null) {
+//            selected.setNew(false);
+//            selected.setTickValue(newValue);
+//        }
+//
+//        selectedXtick = null;
+//        selectedYtick = null;
     }
 
     public boolean isXgridReady() {
-        return xTickPoints.size() > 1 && (getGridOverlapState() &
+        return (getGridOverlapState() &
                 (ExportStatus.VALUE_OVERLAP_X_GRID |
                         ExportStatus.PIXEL_OVERLAP_X_GRID)) == 0;
     }
 
     public boolean isYgridReady() {
-        return yTickPoints.size() > 1 && (getGridOverlapState() &
+        return (getGridOverlapState() &
                 (ExportStatus.VALUE_OVERLAP_Y_GRID |
                         ExportStatus.PIXEL_OVERLAP_Y_GRID)) == 0;
     }
@@ -510,26 +527,27 @@ public class ImageCurve {
         }
 
 
-        for (int i = 0; i <= 1; ++i) {
-            ArrayList<TickPoint> ticks = i == 0 ? xTickPoints : yTickPoints;
-            int noLinesFlag = i == 0 ? ExportStatus.NO_X_GRID_LINES : ExportStatus.NO_Y_GRID_LINES;
-            int oneLineFlag = i == 0 ? ExportStatus.ONE_X_GRID_LINE : ExportStatus.ONE_Y_GRID_LINE;
-            int ticksEntered = 0;
-
-            for (TickPoint tick : ticks) {
-                if (!tick.isNew()) {
-                    ++ticksEntered;
-                }
-            }
-
-            switch (ticksEntered) {
-                case 0:
-                    status |= noLinesFlag;
-                    break;
-                case 1:
-                    status |= oneLineFlag;
-            }
-        }
+        //TODO
+//        for (int i = 0; i <= 1; ++i) {
+//            ArrayList<TickPoint> ticks = i == 0 ? xTickPoints : yTickPoints;
+//            int noLinesFlag = i == 0 ? ExportStatus.NO_X_GRID_LINES : ExportStatus.NO_Y_GRID_LINES;
+//            int oneLineFlag = i == 0 ? ExportStatus.ONE_X_GRID_LINE : ExportStatus.ONE_Y_GRID_LINE;
+//            int ticksEntered = 0;
+//
+//            for (TickPoint tick : ticks) {
+//                if (!tick.isNew()) {
+//                    ++ticksEntered;
+//                }
+//            }
+//
+//            switch (ticksEntered) {
+//                case 0:
+//                    status |= noLinesFlag;
+//                    break;
+//                case 1:
+//                    status |= oneLineFlag;
+//            }
+//        }
 
         status |= getGridOverlapState();
 
@@ -543,84 +561,89 @@ public class ImageCurve {
         double minPixelDist = 5.0;
         double minValueDist = 1.0e-8;
 
-        Vec2D tickDirection;
-        if (xTickPoints.size() > 1) {
-            tickDirection = horizonSettings.getVerticalDirection();
-            TickPoint tick0 = xTickPoints.get(0);
-            TickPoint tick1 = xTickPoints.get(1);
-
-            if (tick0.distanceTo(tick1.getPosition(), tickDirection) < minPixelDist) {
-                result |= ExportStatus.PIXEL_OVERLAP_X_GRID;
-            }
-
-            if (Math.abs(tick0.getTickValue() - tick1.getTickValue()) < minValueDist) {
-                result |= ExportStatus.VALUE_OVERLAP_X_GRID;
-            }
-        }
-
-        if (yTickPoints.size() > 1) {
-            tickDirection = horizonSettings.getHorizontalDirection();
-            TickPoint tick0 = yTickPoints.get(0);
-            TickPoint tick1 = yTickPoints.get(1);
-
-            if (tick0.distanceTo(tick1.getPosition(), tickDirection) < minPixelDist) {
-                result |= ExportStatus.PIXEL_OVERLAP_Y_GRID;
-            }
-
-            if (Math.abs(tick0.getTickValue() - tick1.getTickValue()) < minValueDist) {
-                result |= ExportStatus.VALUE_OVERLAP_Y_GRID;
-            }
-        }
+        //TODO
+//        Vec2D tickDirection;
+//        if (xTickPoints.size() > 1) {
+//            tickDirection = horizonSettings.getVerticalDirection();
+//            TickPoint tick0 = xTickPoints.get(0);
+//            TickPoint tick1 = xTickPoints.get(1);
+//
+//            if (tick0.distanceTo(tick1.getPosition(), tickDirection) < minPixelDist) {
+//                result |= ExportStatus.PIXEL_OVERLAP_X_GRID;
+//            }
+//
+//            if (Math.abs(tick0.getTickValue() - tick1.getTickValue()) < minValueDist) {
+//                result |= ExportStatus.VALUE_OVERLAP_X_GRID;
+//            }
+//        }
+//
+//        if (yTickPoints.size() > 1) {
+//            tickDirection = horizonSettings.getHorizontalDirection();
+//            TickPoint tick0 = yTickPoints.get(0);
+//            TickPoint tick1 = yTickPoints.get(1);
+//
+//            if (tick0.distanceTo(tick1.getPosition(), tickDirection) < minPixelDist) {
+//                result |= ExportStatus.PIXEL_OVERLAP_Y_GRID;
+//            }
+//
+//            if (Math.abs(tick0.getTickValue() - tick1.getTickValue()) < minValueDist) {
+//                result |= ExportStatus.VALUE_OVERLAP_Y_GRID;
+//            }
+//        }
 
         return result;
     }
 
-    private Vec2D imageToReal(Vec2D imagePoint) {
-        //this function should be called after check that
-        //we can really calculate real points
-        //so all x and y ticks are defined
-
-        Vec2D realPoint = new Vec2D(0.0D, 0.0D);
-        Vec2D x0pos = xTickPoints.get(0).getPosition();
-        Vec2D x1pos = xTickPoints.get(1).getPosition();
-        Vec2D y0pos = yTickPoints.get(0).getPosition();
-        Vec2D y1pos = yTickPoints.get(1).getPosition();
-        Vec2D horizon0pos = horizonSettings.getOrigin().getPosition();
-        Vec2D horizon1pos = horizonSettings.getTarget().getPosition();
-        double det1 = (x0pos.getX() - x1pos.getX()) * (horizon1pos.getX() - horizon0pos.getX()) +
-                (x0pos.getY() - x1pos.getY()) * (horizon1pos.getY() - horizon0pos.getY());
-        double det2 = (y0pos.getX() - y1pos.getX()) * (horizon0pos.getY() - horizon1pos.getY()) -
-                (y0pos.getY() - y1pos.getY()) * (horizon0pos.getX() - horizon1pos.getX());
-
-        double a = (xTickPoints.get(0).getTickValue() - xTickPoints.get(1).getTickValue()) *
-                (horizon1pos.getX() - horizon0pos.getX()) / det1;
-        double b = (xTickPoints.get(0).getTickValue() - xTickPoints.get(1).getTickValue()) *
-                (horizon1pos.getY() - horizon0pos.getY()) / det1;
-        double c = (yTickPoints.get(0).getTickValue() - yTickPoints.get(1).getTickValue()) *
-                (horizon0pos.getY() - horizon1pos.getY()) / det2;
-        double d = -(yTickPoints.get(0).getTickValue() - yTickPoints.get(1).getTickValue()) *
-                (horizon0pos.getX() - horizon1pos.getX()) / det2;
-
-        double e = xTickPoints.get(0).getTickValue() - a * x0pos.getX() - b * x0pos.getY();
-        double f = yTickPoints.get(0).getTickValue() - c * y0pos.getX() - d * y0pos.getY();
-
-        realPoint.setX(a * imagePoint.getX() + b * imagePoint.getY() + e);
-        realPoint.setY(c * imagePoint.getX() + d * imagePoint.getY() + f);
-
-        return realPoint;
-    }
+//    private Vec2D imageToReal(Vec2D imagePoint) {
+//        //this function should be called after check that
+//        //we can really calculate real points
+//        //so all x and y ticks are defined
+//
+//        Vec2D realPoint = new Vec2D(0.0D, 0.0D);
+//        Vec2D x0pos = xTickPoints.get(0).getPosition();
+//        Vec2D x1pos = xTickPoints.get(1).getPosition();
+//        Vec2D y0pos = yTickPoints.get(0).getPosition();
+//        Vec2D y1pos = yTickPoints.get(1).getPosition();
+//        Vec2D horizon0pos = horizonSettings.getOrigin().getPosition();
+//        Vec2D horizon1pos = horizonSettings.getTarget().getPosition();
+//        double det1 = (x0pos.getX() - x1pos.getX()) * (horizon1pos.getX() - horizon0pos.getX()) +
+//                (x0pos.getY() - x1pos.getY()) * (horizon1pos.getY() - horizon0pos.getY());
+//        double det2 = (y0pos.getX() - y1pos.getX()) * (horizon0pos.getY() - horizon1pos.getY()) -
+//                (y0pos.getY() - y1pos.getY()) * (horizon0pos.getX() - horizon1pos.getX());
+//
+//        double a = (xTickPoints.get(0).getTickValue() - xTickPoints.get(1).getTickValue()) *
+//                (horizon1pos.getX() - horizon0pos.getX()) / det1;
+//        double b = (xTickPoints.get(0).getTickValue() - xTickPoints.get(1).getTickValue()) *
+//                (horizon1pos.getY() - horizon0pos.getY()) / det1;
+//        double c = (yTickPoints.get(0).getTickValue() - yTickPoints.get(1).getTickValue()) *
+//                (horizon0pos.getY() - horizon1pos.getY()) / det2;
+//        double d = -(yTickPoints.get(0).getTickValue() - yTickPoints.get(1).getTickValue()) *
+//                (horizon0pos.getX() - horizon1pos.getX()) / det2;
+//
+//        double e = xTickPoints.get(0).getTickValue() - a * x0pos.getX() - b * x0pos.getY();
+//        double f = yTickPoints.get(0).getTickValue() - c * y0pos.getX() - d * y0pos.getY();
+//
+//        realPoint.setX(a * imagePoint.getX() + b * imagePoint.getY() + e);
+//        realPoint.setY(c * imagePoint.getX() + d * imagePoint.getY() + f);
+//
+//        return realPoint;
+//    }
 
     public HorizonSettings getHorizon() {
         return horizonSettings;
     }
 
-    public ArrayList<TickPoint> getXticks() {
-        return xTickPoints;
+    public List<TickGrid.Tick> getTicks() {
+        return tickGrid.getTicks();
     }
 
-    public ArrayList<TickPoint> getYticks() {
-        return yTickPoints;
-    }
+//    public ArrayList<TickPoint> getXticks() {
+//        return xTickPoints;
+//    }
+//
+//    public ArrayList<TickPoint> getYticks() {
+//        return yTickPoints;
+//    }
 
     public ArrayList<Point> getAllPoints() {
         return allPoints;
@@ -677,7 +700,7 @@ public class ImageCurve {
 
         for (Point point : imagePoints) {
             Vec2D imagePos = point.getPosition();
-            Vec2D exportPoint = imageToReal(imagePos);
+            Vec2D exportPoint = tickGrid.imageToReal(imagePos);
             out_realPoints.add(exportPoint);
         }
     }
@@ -690,7 +713,7 @@ public class ImageCurve {
         for (int i = 0; i < imagePoints.size(); i++) {
             ImagePoint point = imagePoints.get(i);
             Vec2D imagePos = point.getPosition();
-            Vec2D exportPoint = imageToReal(imagePos);
+            Vec2D exportPoint = tickGrid.imageToReal(imagePos);
             out_realPoints[2 * i] = exportPoint.getX();
             out_realPoints[2 * i + 1] = exportPoint.getY();
         }

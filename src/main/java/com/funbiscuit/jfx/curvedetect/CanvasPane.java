@@ -248,24 +248,18 @@ public final class CanvasPane extends Pane {
     private void drawTickLines() {
         gc.setLineWidth(2.0);
         HorizonSettings horizon = imageCurve.getHorizon();
-        List<TickPoint> xTickPoints = imageCurve.getXticks();
-        List<TickPoint> allTicks = new ArrayList<>(xTickPoints);
-        allTicks.addAll(imageCurve.getYticks());
+        List<TickGrid.Tick> allTicks = imageCurve.getTicks();
 
-        UUID selectedId = imageCurve.getSelectedId();
-        UUID hoveredId = imageCurve.getHoveredId(ImageElement.Type.X_TICK | ImageElement.Type.Y_TICK);
-
-        boolean ticksActive = workMode.get() == MainController.WorkMode.X_TICKS ||
-                workMode.get() == MainController.WorkMode.Y_TICKS;
+        boolean ticksActive = workMode.get() == MainController.WorkMode.TICK_GRID;
 
         for (int i = 0; i < allTicks.size(); i++) {
-            TickPoint tick = allTicks.get(i);
+            TickGrid.Tick tick = allTicks.get(i);
             gc.setStroke(Color.gray(0.0));
 
             if (ticksActive) {
-                if (tick.getId().equals(selectedId)) {
+                if (tick.isSelected()) {
                     gc.setStroke(Color.GREEN);
-                } else if (tick.getId().equals(hoveredId)) {
+                } else if (tick.isHovered()) {
                     if (deleteMode.get()) {
                         gc.setStroke(Color.RED);
                     } else {
@@ -276,7 +270,7 @@ public final class CanvasPane extends Pane {
 
             Vec2D point1 = imageToCanvas(tick.getPosition());
             Vec2D point2 = new Vec2D(point1);
-            if (i < xTickPoints.size()) {
+            if (tick.getType() == TickGrid.Tick.Type.X) {
                 point2.setX(point1.getX() + horizon.getVerticalDirection().getX() * 100);
                 point2.setY(point1.getY() + horizon.getVerticalDirection().getY() * 100);
             } else {
@@ -290,21 +284,28 @@ public final class CanvasPane extends Pane {
     }
 
     private void drawTickValues() {
-        gc.setFill(Color.gray(0.0D));
+        gc.setFill(Color.gray(0.0));
 
-        gc.setFont(new Font(16.0D));
-        ArrayList<TickPoint> xTickPoints = this.imageCurve.getXticks();
-        ArrayList<TickPoint> yTickPoints = this.imageCurve.getYticks();
+        gc.setFont(new Font(16.0));
 
-        for (TickPoint tick : xTickPoints) {
+        for (TickGrid.Tick tick : imageCurve.getTicks()) {
             Vec2D pos = imageToCanvas(tick.getPosition());
-            gc.fillText(String.valueOf(tick.getTickValue()), pos.getX(), pos.getY());
+            gc.fillText(String.valueOf(tick.getValue()), pos.getX(), pos.getY());
         }
 
-        for (TickPoint tick : yTickPoints) {
-            Vec2D pos = imageToCanvas(tick.getPosition());
-            gc.fillText(String.valueOf(tick.getTickValue()), pos.getX(), pos.getY());
-        }
+
+//        ArrayList<TickPoint> xTickPoints = this.imageCurve.getXticks();
+//        ArrayList<TickPoint> yTickPoints = this.imageCurve.getYticks();
+//
+//        for (TickPoint tick : xTickPoints) {
+//            Vec2D pos = imageToCanvas(tick.getPosition());
+//            gc.fillText(String.valueOf(tick.getTickValue()), pos.getX(), pos.getY());
+//        }
+//
+//        for (TickPoint tick : yTickPoints) {
+//            Vec2D pos = imageToCanvas(tick.getPosition());
+//            gc.fillText(String.valueOf(tick.getTickValue()), pos.getX(), pos.getY());
+//        }
     }
 
     private void drawHorizon() {

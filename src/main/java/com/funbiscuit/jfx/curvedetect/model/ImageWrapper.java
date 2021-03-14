@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 public class ImageWrapper {
     /**
@@ -150,14 +151,18 @@ public class ImageWrapper {
         updateBinarization(null);
     }
 
+    public Vec2D getSize() {
+        return new Vec2D(image.getWidth(), image.getHeight());
+    }
+
     /**
      * Performs snapping of provided point to nearest black pixel
      * and then performs snapping to barycenter of nearby region
      * @param point to snap
-     * @return true if point was snapped or false if no black pixel was found nearby
+     * @return snapped point or null if not snapped
      */
-    public boolean snap(ImagePoint point) {
-        return snapToCurve(point) && snapToBary(point);
+    public Vec2D snap(Vec2D point) {
+        return snapToBary(snapToCurve(point));
     }
 
     /**
@@ -165,7 +170,9 @@ public class ImageWrapper {
      * @param point to snap
      * @return true if point was snapped or false if no black pixel was found nearby
      */
-    private boolean snapToCurve(ImagePoint point) {
+    private Vec2D snapToCurve(Vec2D point) {
+        if(point == null)
+            return null;
         // rectangular region that defines region of snapping
         int halfSide = 10;
         int side = halfSide * 2 + 1;
@@ -175,11 +182,10 @@ public class ImageWrapper {
         int height = (int) image.getHeight();
 
         if (width < side * 2 || height < side * 2)
-            return false;
+            return null;
 
-        Vec2D pos = point.getPosition();
-        int px = (int) pos.getX();
-        int py = (int) pos.getY();
+        int px = (int) point.getX();
+        int py = (int) point.getY();
 
 
         int minDist = side * side;
@@ -207,10 +213,9 @@ public class ImageWrapper {
         }
 
         if (closestX == -1)
-            return false;
+            return null;
 
-        point.setImagePos(px + closestX - halfSide, py + closestY - halfSide);
-        return true;
+        return new Vec2D(px + closestX - halfSide, py + closestY - halfSide);
     }
 
     /**
@@ -218,7 +223,9 @@ public class ImageWrapper {
      * @param point to snap
      * @return true if snap was successful, or false if there are no black pixels nearby
      */
-    private boolean snapToBary(ImagePoint point) {
+    private Vec2D snapToBary(Vec2D point) {
+        if(point == null)
+            return null;
         // smaller region is used for barycenter calculation
         int halfSide = 4;
         int side = halfSide * 2 + 1;
@@ -228,11 +235,10 @@ public class ImageWrapper {
 
         // don't snap on small images
         if (width < side * 2 || height < side * 2)
-            return false;
+            return null;
 
-        Vec2D pos = point.getPosition();
-        int px = (int) pos.getX();
-        int py = (int) pos.getY();
+        int px = (int) point.getX();
+        int py = (int) point.getY();
 
         double closestX = 0;
         double closestY = 0;
@@ -254,10 +260,8 @@ public class ImageWrapper {
         }
 
         if (baryMass <= 0)
-            return false;
+            return null;
 
-        point.setImagePos(px + closestX / baryMass, py + closestY / baryMass);
-
-        return true;
+        return new Vec2D(px + closestX / baryMass, py + closestY / baryMass);
     }
 }
