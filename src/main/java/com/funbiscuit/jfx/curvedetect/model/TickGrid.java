@@ -168,6 +168,21 @@ public class TickGrid {
         return realPoint;
     }
 
+    public Comparator<? super Point> getPointsComparator() {
+        Vec2D origin = ticks.get(2).getPosition();
+        Vec2D tickYDirection = ticks.get(2).direction;
+        double dy = tickYDirection.getY();
+        double mDx = tickYDirection.getX();
+
+        return (p1, p2) -> {
+            Vec2D p1image = p1.getPosition();
+            Vec2D p2image = p2.getPosition();
+            double p1Projection = -mDx * (p1image.getX() - origin.getX()) + dy * (p1image.getY() - origin.getY());
+            double p2Projection = -mDx * (p2image.getX() - origin.getX()) + dy * (p2image.getY() - origin.getY());
+            return Double.compare(p1Projection, p2Projection);
+        };
+    }
+
     public List<Anchor> getAnchors() {
         return Collections.emptyList();
     }

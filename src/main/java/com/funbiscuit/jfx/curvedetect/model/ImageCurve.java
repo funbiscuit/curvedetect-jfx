@@ -233,45 +233,7 @@ public class ImageCurve {
     }
 
     private void sortPointsArray(ArrayList<Point> array) {
-        Vec2D dir = horizonSettings.getHorizontalDirection();
-        Vec2D origin = horizonSettings.getOrigin().getPosition();
-        double dy = dir.getY();
-        double mDx = -dir.getX();
-        int gridInvertion = 1;
-
-        //TODO
-
-//        if (xTickPoints.size() > 1) {
-//            TickPoint left;
-//            TickPoint right;
-//
-//            if (xTickPoints.get(0).getTickValue() < xTickPoints.get(1).getTickValue()) {
-//                left = xTickPoints.get(0);
-//                right = xTickPoints.get(1);
-//            } else {
-//                left = xTickPoints.get(1);
-//                right = xTickPoints.get(0);
-//            }
-//
-//            Vec2D p1image = left.getPosition();
-//            Vec2D p2image = right.getPosition();
-//            double p1Projection = -mDx * (p1image.getX() - origin.getX()) + dy * (p1image.getY() - origin.getY());
-//            double p2Projection = -mDx * (p2image.getX() - origin.getX()) + dy * (p2image.getY() - origin.getY());
-//            if (p1Projection > p2Projection) {
-//                gridInvertion = -1;
-//            }
-//        }
-
-        int gridInv = gridInvertion;
-
-        array.sort((p1, p2) -> {
-            Vec2D p1image = p1.getPosition();
-            Vec2D p2image = p2.getPosition();
-            double p1Projection = -mDx * (p1image.getX() - origin.getX()) + dy * (p1image.getY() - origin.getY());
-            double p2Projection = -mDx * (p2image.getX() - origin.getX()) + dy * (p2image.getY() - origin.getY());
-            return p1Projection < p2Projection ? -gridInv : (p1Projection > p2Projection ? gridInv : 0);
-        });
-
+        array.sort(tickGrid.getPointsComparator());
     }
 
     public void resetSelectedTick() {
